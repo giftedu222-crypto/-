@@ -168,6 +168,7 @@ function showCatchInformation(fish, isNew, count) {
   caughtKind.style.color = fish.isTrash ? '#9eb0b7' : rarityColors[fish.tier];
   document.querySelector('#caught-name').textContent = fish.name;
   document.querySelector('#caught-description').textContent = fish.trait;
+  document.querySelector('#caught-recipe').textContent = fish.isTrash ? '추천 요리 없음' : fish.recipe;
   document.querySelector('#caught-season').textContent = fish.isTrash ? '해당 없음' : fish.season;
   document.querySelector('#caught-state').textContent = fish.isTrash ? '도감에 등록되지 않음' : isNew ? '새로 발견!' : `중복 획득 · 총 ${count}회`;
   catchInfo.style.setProperty('--catch-color', fish.isTrash ? '#69747a' : rarityColors[fish.tier]);
