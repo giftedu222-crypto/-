@@ -11,6 +11,9 @@ const currentPlaceEl = document.querySelector('#current-place');
 const gameClockEl = document.querySelector('#game-clock');
 const clockIconEl = document.querySelector('#clock-icon');
 const clockTimeEl = document.querySelector('#clock-time');
+const seasonWidgetEl = document.querySelector('#season-widget');
+const seasonTitleEl = document.querySelector('#season-title');
+const seasonListEl = document.querySelector('#season-list');
 
 const fishCatalog = window.SEAFOOD_CATALOG || [];
 const pageSize = 16;
@@ -31,6 +34,31 @@ const fishingPlaces = {
 let selectedFishingPlace = null;
 const initialClock = new Date();
 let gameMinutes = initialClock.getHours() * 60 + initialClock.getMinutes();
+
+function seasonIncludesMonth(season, month) {
+  if (season === '연중') return true;
+  const range = season.match(/(\d{1,2})\s*[~–-]\s*(\d{1,2})월/);
+  if (!range) return false;
+  const start = Number(range[1]);
+  const end = Number(range[2]);
+  return start <= end ? month >= start && month <= end : month >= start || month <= end;
+}
+
+function renderSeasonWidget() {
+  const month = new Date().getMonth() + 1;
+  const candidates = fishCatalog.filter(fish => seasonIncludesMonth(fish.season, month));
+  const groups = ['어류', '연체류', '갑각류', '기타'];
+  const buckets = groups.map(group => candidates.filter(fish => fish.group === group));
+  const featured = [];
+  while (featured.length < 6 && buckets.some(bucket => bucket.length)) {
+    buckets.forEach(bucket => {
+      if (bucket.length && featured.length < 6) featured.push(bucket.shift());
+    });
+  }
+  const groupIcons = { 어류: '🐟', 연체류: '🐚', 갑각류: '🦀', 기타: '🌊' };
+  seasonTitleEl.textContent = `${month}월 제철 해산물`;
+  seasonListEl.innerHTML = featured.map(fish => `<li><span>${groupIcons[fish.group]}</span><b>${fish.name}</b><small>${fish.season}</small></li>`).join('');
+}
 
 let discoveredFish = new Set();
 let catchCounts = {};
@@ -207,6 +235,7 @@ function applyFishingPlace(place) {
   currentPlaceEl.textContent = `현재 장소 · ${place.name}`;
   currentPlaceEl.style.display = 'block';
   gameClockEl.style.display = 'grid';
+  seasonWidgetEl.classList.add('in-game');
   Object.entries(placeScenery).forEach(([key, group]) => { group.visible = key === place.id; });
   updateTimeOfDay(0);
 }
@@ -877,10 +906,12 @@ menuBack.addEventListener('click', () => {
   menuBack.style.display = 'none';
   currentPlaceEl.style.display = 'none';
   gameClockEl.style.display = 'none';
+  seasonWidgetEl.classList.remove('in-game');
   selectedFishingPlace = null;
   startScreen.style.display = 'flex';
 });
 
+renderSeasonWidget();
 renderCollection();
 
 canvas.addEventListener('click', castRod);
