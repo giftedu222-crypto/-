@@ -672,8 +672,10 @@ let catchAnimationStart = 0;
 let pendingCatch = null;
 let retrieving = false;
 let retrievalStart = 0;
+let retrievalCompleteMessage = '';
 let castTime = 0;
 let biteAt = 0;
+let biteStartedAt = 0;
 const castStart = new THREE.Vector3();
 const castControl = new THREE.Vector3();
 const target = new THREE.Vector3();
@@ -724,6 +726,7 @@ function castRod() {
   launched = false;
   landed = false;
   bite = false;
+  biteStartedAt = 0;
   castTime = performance.now();
   biteAt = 3.1 + Math.random() * 2.1;
   getRodTip();
@@ -736,6 +739,26 @@ function castRod() {
   line.visible = true;
   ripple.visible = false;
   statusEl.textContent = '낚싯대를 휘둘러 찌를 던지는 중...';
+}
+
+function startEmptyRetrieval(message, completeMessage) {
+  const pulledFromWater = landed;
+  statusEl.textContent = message;
+  cast = false;
+  landed = false;
+  bite = false;
+  biteStartedAt = 0;
+  retrieving = true;
+  retrievalCompleteMessage = completeMessage;
+  hookedFish.visible = false;
+  retrievalStart = performance.now();
+  retrieveStartPosition.copy(bobPosition);
+  camera.updateMatrixWorld(true);
+  retrieveEndPosition.set(0.22, 0.22, -1.75).applyMatrix4(camera.matrixWorld);
+  retrieveControlPosition.copy(retrieveStartPosition).lerp(retrieveEndPosition, 0.5);
+  retrieveControlPosition.y += 1.8;
+  ripple.visible = false;
+  if (pulledFromWater) splashAt(bobPosition, 1.05);
 }
 
 function reelIn() {
@@ -755,6 +778,7 @@ function reelIn() {
     cast = false;
     landed = false;
     bite = false;
+    biteStartedAt = 0;
     ripple.visible = false;
     catchAnimating = true;
     catchAnimationStart = performance.now();
@@ -769,21 +793,7 @@ function reelIn() {
     catchControlPosition.y += 3.4;
     return;
   }
-  const pulledFromWater = landed;
-  statusEl.textContent = '너무 일찍 감았습니다! 찌를 회수하는 중...';
-  cast = false;
-  landed = false;
-  bite = false;
-  retrieving = true;
-  hookedFish.visible = false;
-  retrievalStart = performance.now();
-  retrieveStartPosition.copy(bobPosition);
-  camera.updateMatrixWorld(true);
-  retrieveEndPosition.set(0.22, 0.22, -1.75).applyMatrix4(camera.matrixWorld);
-  retrieveControlPosition.copy(retrieveStartPosition).lerp(retrieveEndPosition, 0.5);
-  retrieveControlPosition.y += 1.8;
-  ripple.visible = false;
-  if (pulledFromWater) splashAt(bobPosition, 1.05);
+  startEmptyRetrieval('너무 일찍 감았습니다! 찌를 회수하는 중...', '입질 전 회수로 실패! 바다를 클릭해 바로 다시 던져보세요');
 }
 
 document.querySelector('#start-fishing').addEventListener('click', () => {
@@ -941,7 +951,15 @@ function loop(time) {
 
       if (!bite && elapsed > biteAt) {
         bite = true;
-        statusEl.textContent = '입질이다! SPACE를 눌러 릴을 감으세요!';
+        biteStartedAt = time;
+      }
+
+      if (bite) {
+        const biteRemaining = Math.max(0, 2 - (time - biteStartedAt) / 1000);
+        statusEl.textContent = `입질이다! ${biteRemaining.toFixed(1)}초 안에 SPACE를 누르세요!`;
+        if (biteRemaining <= 0) {
+          startEmptyRetrieval('놓쳤습니다! 물고기가 도망가 찌를 회수하는 중...', '물고기가 도망갔습니다! 바다를 클릭해 다시 던져보세요');
+        }
       }
     }
   }
@@ -991,7 +1009,7 @@ function loop(time) {
       retrieving = false;
       bobber.visible = false;
       line.visible = false;
-      statusEl.textContent = '입질 전 회수로 실패! 바다를 클릭해 바로 다시 던지세요';
+      statusEl.textContent = retrievalCompleteMessage;
     }
   }
 
