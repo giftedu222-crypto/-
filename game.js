@@ -1,5 +1,6 @@
 const canvas = document.querySelector('#game');
 const statusEl = document.querySelector('#status');
+const helpEl = document.querySelector('#help');
 const startScreen = document.querySelector('#start');
 const collectionScreen = document.querySelector('#collection');
 const collectionGrid = document.querySelector('#collection-grid');
@@ -844,6 +845,8 @@ document.querySelectorAll('.location-card').forEach(card => card.addEventListene
   started = true;
   locationScreen.style.display = 'none';
   menuBack.style.display = 'block';
+  statusEl.style.display = 'block';
+  helpEl.style.display = 'block';
   statusEl.textContent = `${place.name} · 바다를 클릭해 찌를 던져보세요`;
 }));
 
@@ -904,6 +907,8 @@ menuBack.addEventListener('click', () => {
   ripple.visible = false;
   catchInfo.style.display = 'none';
   menuBack.style.display = 'none';
+  statusEl.style.display = 'none';
+  helpEl.style.display = 'none';
   currentPlaceEl.style.display = 'none';
   gameClockEl.style.display = 'none';
   seasonWidgetEl.classList.remove('in-game');
