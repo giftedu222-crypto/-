@@ -17,6 +17,11 @@ const pageSize = 16;
 let catalogPage = 0;
 const rarityNames = { 1: '일반', 2: '희귀', 3: '전설' };
 const rarityColors = { 1: '#4d916e', 2: '#b66a28', 3: '#7551a8' };
+const trashCatches = [
+  { id: 'trash-can', name: '찌그러진 빈 캔', group: '바다 쓰레기', model: 'trash-can', icon: '🥫', trait: '물고기인 줄 알았지만 오래된 빈 캔이었습니다.', isTrash: true },
+  { id: 'trash-bottle', name: '떠다니던 페트병', group: '바다 쓰레기', model: 'trash-bottle', icon: '🧴', trait: '바다를 떠돌던 페트병을 건져 올렸습니다.', isTrash: true },
+  { id: 'trash-boot', name: '낡은 장화', group: '바다 쓰레기', model: 'trash-boot', icon: '🥾', trait: '묵직한 손맛의 정체는 물고기가 아니라 낡은 장화였습니다.', isTrash: true }
+];
 const fishingPlaces = {
   amnam: { id: 'amnam', name: '암남공원 방파제', sky: 0x91cfe0, fog: 0x8bc8db, water: [0x0b4169, 0x082f56, 0x061f3f], sun: 0xffd281, light: 0xffdfad, preferred: ['전갱이'] },
   yeongdo: { id: 'yeongdo', name: '영도 신방파제', sky: 0x789fb8, fog: 0x779aab, water: [0x0a3559, 0x072944, 0x041a31], sun: 0xffe0a8, light: 0xd9e7ed, preferred: ['갈치', '전갱이', '붕장어'] },
@@ -86,19 +91,22 @@ function showCatalogDetail(index) {
 
 function showCatchInformation(fish, isNew, count) {
   const catchLabel = document.querySelector('#catch-label');
-  catchLabel.textContent = isNew ? 'NEW CATCH' : 'DUPLICATE';
-  catchLabel.classList.toggle('duplicate', !isNew);
-  document.querySelector('#caught-icon').innerHTML = `<img src="${fish.photo}" alt="${fish.name}">`;
-  document.querySelector('#caught-kind').textContent = `${fish.group} · ${rarityNames[fish.tier]}`;
+  catchLabel.textContent = fish.isTrash ? '꽝!' : isNew ? 'NEW CATCH' : 'DUPLICATE';
+  catchLabel.classList.toggle('duplicate', fish.isTrash || !isNew);
+  const caughtIcon = document.querySelector('#caught-icon');
+  caughtIcon.classList.toggle('is-trash', fish.isTrash);
+  caughtIcon.innerHTML = fish.isTrash ? fish.icon : `<img src="${fish.photo}" alt="${fish.name}">`;
+  document.querySelector('#caught-kind').textContent = fish.isTrash ? fish.group : `${fish.group} · ${rarityNames[fish.tier]}`;
   document.querySelector('#caught-name').textContent = fish.name;
   document.querySelector('#caught-description').textContent = fish.trait;
-  document.querySelector('#caught-season').textContent = fish.season;
-  document.querySelector('#caught-state').textContent = isNew ? '새로 발견!' : `중복 획득 · 총 ${count}회`;
-  catchInfo.style.setProperty('--catch-color', rarityColors[fish.tier]);
+  document.querySelector('#caught-season').textContent = fish.isTrash ? '해당 없음' : fish.season;
+  document.querySelector('#caught-state').textContent = fish.isTrash ? '도감에 등록되지 않음' : isNew ? '새로 발견!' : `중복 획득 · 총 ${count}회`;
+  catchInfo.style.setProperty('--catch-color', fish.isTrash ? '#69747a' : rarityColors[fish.tier]);
   catchInfo.style.display = 'flex';
 }
 
 function pickCatch() {
+  if (Math.random() < 0.1) return trashCatches[Math.floor(Math.random() * trashCatches.length)];
   if (selectedFishingPlace && Math.random() < 0.3) {
     const localPool = fishCatalog.filter(fish => selectedFishingPlace.preferred.includes(fish.name));
     if (localPool.length) return localPool[Math.floor(Math.random() * localPool.length)];
@@ -548,7 +556,26 @@ registerCatchModel('tunicate', [
   catchPart(new THREE.CylinderGeometry(0.035, 0.07, 0.13, 9), hookedCatchAccentMaterial, [0.1, -0.08, 0.04], null, [0, 0, 0.28])
 ]);
 
+registerCatchModel('trash-can', [
+  catchPart(new THREE.CylinderGeometry(0.14, 0.14, 0.42, 14), hookedFishMaterial, [0, -0.27, 0], null, [0.08, 0, 0.25]),
+  catchPart(new THREE.TorusGeometry(0.12, 0.014, 6, 14), hookedCatchAccentMaterial, [0.05, -0.06, 0.01], null, [Math.PI / 2, 0, 0.25]),
+  catchPart(new THREE.TorusGeometry(0.12, 0.014, 6, 14), hookedCatchAccentMaterial, [-0.05, -0.47, -0.01], null, [Math.PI / 2, 0, 0.25])
+]);
+
+registerCatchModel('trash-bottle', [
+  catchPart(new THREE.CylinderGeometry(0.13, 0.16, 0.48, 12), hookedFishMaterial, [0, -0.31, 0], [0.72, 1, 0.72], [0.05, 0, -0.18]),
+  catchPart(new THREE.CylinderGeometry(0.055, 0.08, 0.18, 10), hookedFishMaterial, [-0.055, -0.01, 0], null, [0.05, 0, -0.18]),
+  catchPart(new THREE.CylinderGeometry(0.061, 0.061, 0.07, 10), hookedCatchAccentMaterial, [-0.07, 0.1, 0], null, [0.05, 0, -0.18])
+]);
+
+registerCatchModel('trash-boot', [
+  catchPart(new THREE.BoxGeometry(0.24, 0.5, 0.22), hookedFishMaterial, [0, -0.23, 0], null, [0, 0, 0.12]),
+  catchPart(new THREE.BoxGeometry(0.43, 0.18, 0.24), hookedFishMaterial, [0.12, -0.52, 0], null, [0, 0, -0.08]),
+  catchPart(new THREE.BoxGeometry(0.48, 0.045, 0.27), hookedCatchAccentMaterial, [0.12, -0.62, 0], null, [0, 0, -0.08])
+]);
+
 function getCatchModelKey(fish) {
+  if (fish.isTrash) return fish.model;
   if (fish.form === 'fish') {
     if (['갈치', '뱀장어', '붕장어', '갯장어', '학꽁치'].includes(fish.name)) return 'eel';
     if (['가자미', '도다리', '넙치', '서대'].includes(fish.name)) return 'flatfish';
@@ -566,7 +593,7 @@ function getCatchModelKey(fish) {
 function setHookedCatchModel(fish) {
   Object.values(hookedCatchModels).forEach(model => { model.visible = false; });
   hookedCatchModels[getCatchModelKey(fish)].visible = true;
-  hookedFishMaterial.color.set(rarityColors[fish.tier]);
+  hookedFishMaterial.color.set(fish.isTrash ? 0x657078 : rarityColors[fish.tier]);
   hookedCatchAccentMaterial.color.copy(hookedFishMaterial.color).offsetHSL(0.03, -0.12, 0.2);
 }
 
@@ -715,11 +742,15 @@ function reelIn() {
   if (!cast) return;
   if (bite) {
     const fish = pickCatch();
-    const isNew = !discoveredFish.has(fish.id);
-    discoveredFish.add(fish.id);
-    catchCounts[fish.id] = (catchCounts[fish.id] || 0) + 1;
-    saveCollection();
-    renderCollection();
+    const isNew = !fish.isTrash && !discoveredFish.has(fish.id);
+    let count = 0;
+    if (!fish.isTrash) {
+      discoveredFish.add(fish.id);
+      catchCounts[fish.id] = (catchCounts[fish.id] || 0) + 1;
+      count = catchCounts[fish.id];
+      saveCollection();
+      renderCollection();
+    }
     statusEl.textContent = `챔질 성공! 낚싯대를 들어 올리는 중...`;
     cast = false;
     landed = false;
@@ -727,7 +758,7 @@ function reelIn() {
     ripple.visible = false;
     catchAnimating = true;
     catchAnimationStart = performance.now();
-    pendingCatch = { fish, isNew, count: catchCounts[fish.id] };
+    pendingCatch = { fish, isNew, count };
     setHookedCatchModel(fish);
     hookedFish.visible = true;
     splashAt(bobPosition, 1.6);
@@ -938,7 +969,7 @@ function loop(time) {
       bobber.visible = false;
       hookedFish.visible = false;
       line.visible = false;
-      statusEl.textContent = `${result.fish.name}을(를) 낚았습니다!`;
+      statusEl.textContent = result.fish.isTrash ? `꽝! ${result.fish.name}을(를) 건졌습니다.` : `${result.fish.name}을(를) 낚았습니다!`;
       showCatchInformation(result.fish, result.isNew, result.count);
     }
   }
