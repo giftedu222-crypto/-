@@ -23,6 +23,7 @@ let catalogPage = 0;
 let catalogFilter = '전체';
 let catalogTier = '전체';
 let catalogCaughtOnly = false;
+let collectionReturnToGame = false;
 const rarityNames = { 1: '일반', 2: '희귀', 3: '전설' };
 const rarityColors = { 1: '#4d916e', 2: '#1976c9', 3: '#e0a800' };
 const trashCatches = [
@@ -171,6 +172,9 @@ function showCatchInformation(fish, isNew, count) {
   document.querySelector('#caught-recipe').textContent = fish.isTrash ? '추천 요리 없음' : fish.recipe;
   document.querySelector('#caught-season').textContent = fish.isTrash ? '해당 없음' : fish.season;
   document.querySelector('#caught-state').textContent = fish.isTrash ? '도감에 등록되지 않음' : isNew ? '새로 발견!' : `중복 획득 · 총 ${count}회`;
+  const caughtDexButton = document.querySelector('#caught-open-dex');
+  caughtDexButton.hidden = Boolean(fish.isTrash);
+  if (!fish.isTrash) caughtDexButton.dataset.index = String(fishCatalog.indexOf(fish));
   catchInfo.style.setProperty('--catch-color', fish.isTrash ? '#69747a' : rarityColors[fish.tier]);
   catchInfo.style.display = 'flex';
 }
@@ -889,6 +893,7 @@ document.querySelector('#location-back').addEventListener('click', () => {
 });
 
 document.querySelector('#open-collection').addEventListener('click', () => {
+  collectionReturnToGame = false;
   renderCollection();
   startScreen.style.display = 'none';
   collectionScreen.style.display = 'flex';
@@ -896,7 +901,26 @@ document.querySelector('#open-collection').addEventListener('click', () => {
 
 document.querySelector('#collection-back').addEventListener('click', () => {
   collectionScreen.style.display = 'none';
-  startScreen.style.display = 'flex';
+  if (collectionReturnToGame) {
+    collectionReturnToGame = false;
+    statusEl.textContent = '바다를 클릭해 다시 찌를 던져보세요';
+  } else {
+    startScreen.style.display = 'flex';
+  }
+});
+
+document.querySelector('#caught-open-dex').addEventListener('click', event => {
+  const index = Number(event.currentTarget.dataset.index);
+  if (!Number.isInteger(index) || !fishCatalog[index]) return;
+  collectionReturnToGame = true;
+  catalogFilter = '전체';
+  catalogTier = '전체';
+  catalogCaughtOnly = false;
+  catalogPage = Math.floor(index / pageSize);
+  catchInfo.style.display = 'none';
+  renderCollection();
+  collectionScreen.style.display = 'flex';
+  showCatalogDetail(index);
 });
 
 document.querySelectorAll('.dex-category').forEach(button => button.addEventListener('click', () => {
