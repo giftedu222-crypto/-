@@ -435,19 +435,141 @@ scene.add(bobber);
 
 const hookedFish = new THREE.Group();
 const hookedFishMaterial = new THREE.MeshStandardMaterial({ color: 0x4f916f, roughness: 0.48, metalness: 0.08 });
-const hookedFishBody = new THREE.Mesh(new THREE.SphereGeometry(0.24, 16, 10), hookedFishMaterial);
-hookedFishBody.scale.set(1.65, 0.72, 0.58);
-hookedFish.add(hookedFishBody);
-const hookedFishTail = new THREE.Mesh(new THREE.ConeGeometry(0.17, 0.3, 3), hookedFishMaterial);
-hookedFishTail.rotation.z = -Math.PI / 2;
-hookedFishTail.position.x = -0.43;
-hookedFish.add(hookedFishTail);
-const hookedFishFin = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.22, 3), hookedFishMaterial);
-hookedFishFin.position.set(0.02, 0.17, 0);
-hookedFish.add(hookedFishFin);
-const hookedFishEye = new THREE.Mesh(new THREE.SphereGeometry(0.025, 8, 6), new THREE.MeshBasicMaterial({ color: 0x07131a }));
-hookedFishEye.position.set(0.25, 0.055, 0.12);
-hookedFish.add(hookedFishEye);
+const hookedCatchAccentMaterial = new THREE.MeshStandardMaterial({ color: 0xd6c89e, roughness: 0.62 });
+const hookedCatchEyeMaterial = new THREE.MeshBasicMaterial({ color: 0x07131a });
+const hookedCatchModels = {};
+
+function catchPart(geometry, material = hookedFishMaterial, position, scale, rotation) {
+  const mesh = new THREE.Mesh(geometry, material);
+  if (position) mesh.position.set(...position);
+  if (scale) mesh.scale.set(...scale);
+  if (rotation) mesh.rotation.set(...rotation);
+  return mesh;
+}
+
+function registerCatchModel(key, parts) {
+  const model = new THREE.Group();
+  parts.forEach(part => model.add(part));
+  model.visible = false;
+  hookedCatchModels[key] = model;
+  hookedFish.add(model);
+}
+
+registerCatchModel('fish', [
+  catchPart(new THREE.SphereGeometry(0.24, 16, 10), hookedFishMaterial, [0, 0, 0], [1.65, 0.72, 0.58]),
+  catchPart(new THREE.ConeGeometry(0.17, 0.3, 3), hookedFishMaterial, [-0.43, 0, 0], null, [0, 0, -Math.PI / 2]),
+  catchPart(new THREE.ConeGeometry(0.1, 0.22, 3), hookedFishMaterial, [0.02, 0.17, 0]),
+  catchPart(new THREE.SphereGeometry(0.025, 8, 6), hookedCatchEyeMaterial, [0.25, 0.055, 0.12])
+]);
+
+registerCatchModel('eel', [
+  catchPart(new THREE.CylinderGeometry(0.075, 0.11, 0.95, 12), hookedFishMaterial, [0, -0.18, 0], null, [0, 0, Math.PI / 2]),
+  catchPart(new THREE.SphereGeometry(0.12, 12, 8), hookedFishMaterial, [0.46, -0.18, 0], [1.15, 0.8, 0.8]),
+  catchPart(new THREE.ConeGeometry(0.08, 0.28, 8), hookedFishMaterial, [-0.58, -0.18, 0], null, [0, 0, Math.PI / 2]),
+  catchPart(new THREE.SphereGeometry(0.02, 7, 5), hookedCatchEyeMaterial, [0.51, -0.14, 0.085])
+]);
+
+registerCatchModel('flatfish', [
+  catchPart(new THREE.SphereGeometry(0.3, 18, 10), hookedFishMaterial, [0, -0.08, 0], [1.35, 0.82, 0.2]),
+  catchPart(new THREE.ConeGeometry(0.17, 0.28, 3), hookedFishMaterial, [-0.43, -0.08, 0], [1, 1.2, 0.45], [0, 0, -Math.PI / 2]),
+  catchPart(new THREE.SphereGeometry(0.022, 7, 5), hookedCatchEyeMaterial, [0.2, 0.05, 0.065]),
+  catchPart(new THREE.SphereGeometry(0.022, 7, 5), hookedCatchEyeMaterial, [0.28, 0.01, 0.065])
+]);
+
+registerCatchModel('ray', [
+  catchPart(new THREE.DodecahedronGeometry(0.34, 0), hookedFishMaterial, [0, -0.05, 0], [1.35, 0.62, 0.16], [0, 0, Math.PI / 4]),
+  catchPart(new THREE.CylinderGeometry(0.018, 0.04, 0.7, 7), hookedFishMaterial, [-0.52, -0.2, 0], null, [0, 0, Math.PI / 2]),
+  catchPart(new THREE.SphereGeometry(0.02, 7, 5), hookedCatchEyeMaterial, [0.2, 0.02, 0.075])
+]);
+
+const squidParts = [
+  catchPart(new THREE.ConeGeometry(0.2, 0.62, 12), hookedFishMaterial, [0, -0.15, 0]),
+  catchPart(new THREE.SphereGeometry(0.14, 12, 8), hookedFishMaterial, [0, -0.48, 0], [1, 0.65, 1]),
+  catchPart(new THREE.ConeGeometry(0.12, 0.24, 3), hookedFishMaterial, [-0.14, 0.04, 0], [1, 1, 0.35], [0, 0, 0.5]),
+  catchPart(new THREE.ConeGeometry(0.12, 0.24, 3), hookedFishMaterial, [0.14, 0.04, 0], [1, 1, 0.35], [0, 0, -0.5]),
+  catchPart(new THREE.SphereGeometry(0.022, 7, 5), hookedCatchEyeMaterial, [0.09, -0.43, 0.11])
+];
+for (let i = 0; i < 6; i++) squidParts.push(catchPart(new THREE.CylinderGeometry(0.012, 0.022, 0.34 + (i % 2) * 0.1, 6), hookedFishMaterial, [(i - 2.5) * 0.035, -0.73, 0], null, [0, 0, (i - 2.5) * 0.09]));
+registerCatchModel('squid', squidParts);
+
+const octopusParts = [
+  catchPart(new THREE.SphereGeometry(0.23, 16, 10), hookedFishMaterial, [0, -0.2, 0], [1, 1.15, 1]),
+  catchPart(new THREE.SphereGeometry(0.025, 7, 5), hookedCatchEyeMaterial, [0.09, -0.18, 0.2]),
+  catchPart(new THREE.SphereGeometry(0.025, 7, 5), hookedCatchEyeMaterial, [-0.09, -0.18, 0.2])
+];
+for (let i = 0; i < 8; i++) {
+  const angle = (i / 8) * Math.PI * 2;
+  octopusParts.push(catchPart(new THREE.CylinderGeometry(0.018, 0.04, 0.45, 7), hookedFishMaterial, [Math.cos(angle) * 0.18, -0.5, Math.sin(angle) * 0.12], null, [Math.sin(angle) * 0.38, 0, Math.cos(angle) * 0.38]));
+}
+registerCatchModel('octopus', octopusParts);
+
+registerCatchModel('shell', [
+  catchPart(new THREE.SphereGeometry(0.28, 18, 10), hookedFishMaterial, [0, -0.22, 0], [1.15, 0.85, 0.34], [0.08, 0, 0]),
+  catchPart(new THREE.SphereGeometry(0.22, 18, 9), hookedCatchAccentMaterial, [0, -0.27, 0.06], [1.05, 0.64, 0.12])
+]);
+
+registerCatchModel('snail', [
+  catchPart(new THREE.SphereGeometry(0.25, 18, 12), hookedFishMaterial, [0, -0.25, 0], [1, 0.88, 0.56]),
+  catchPart(new THREE.TorusGeometry(0.12, 0.025, 7, 18), hookedCatchAccentMaterial, [0.02, -0.23, 0.15]),
+  catchPart(new THREE.ConeGeometry(0.12, 0.3, 12), hookedFishMaterial, [-0.24, -0.3, 0], null, [0, 0, Math.PI / 2])
+]);
+
+const crabParts = [
+  catchPart(new THREE.SphereGeometry(0.25, 14, 9), hookedFishMaterial, [0, -0.2, 0], [1.3, 0.55, 1]),
+  catchPart(new THREE.SphereGeometry(0.13, 10, 7), hookedFishMaterial, [-0.42, -0.12, 0], [1.15, 0.72, 1]),
+  catchPart(new THREE.SphereGeometry(0.13, 10, 7), hookedFishMaterial, [0.42, -0.12, 0], [1.15, 0.72, 1])
+];
+for (let side of [-1, 1]) for (let i = 0; i < 4; i++) crabParts.push(catchPart(new THREE.CylinderGeometry(0.014, 0.025, 0.4, 6), hookedFishMaterial, [side * (0.25 + i * 0.035), -0.34 - i * 0.025, 0], null, [0, 0, side * (0.75 + i * 0.12)]));
+registerCatchModel('crab', crabParts);
+
+const shrimpParts = [];
+for (let i = 0; i < 6; i++) shrimpParts.push(catchPart(new THREE.SphereGeometry(0.11 - i * 0.009, 10, 7), hookedFishMaterial, [0.28 - i * 0.105, -0.18 - Math.sin(i * 0.45) * 0.12, 0], [1.2, 0.85, 0.75]));
+shrimpParts.push(catchPart(new THREE.ConeGeometry(0.13, 0.24, 3), hookedFishMaterial, [-0.37, -0.28, 0], null, [0, 0, Math.PI / 2]));
+shrimpParts.push(catchPart(new THREE.SphereGeometry(0.018, 7, 5), hookedCatchEyeMaterial, [0.35, -0.12, 0.085]));
+registerCatchModel('shrimp', shrimpParts);
+
+const urchinParts = [catchPart(new THREE.SphereGeometry(0.24, 14, 9), hookedFishMaterial, [0, -0.25, 0])];
+for (let i = 0; i < 12; i++) {
+  const angle = (i / 12) * Math.PI * 2;
+  urchinParts.push(catchPart(new THREE.ConeGeometry(0.025, 0.22, 5), hookedFishMaterial, [Math.cos(angle) * 0.27, -0.25 + Math.sin(angle) * 0.27, 0], null, [0, 0, -angle + Math.PI / 2]));
+}
+registerCatchModel('urchin', urchinParts);
+
+registerCatchModel('cucumber', [
+  catchPart(new THREE.SphereGeometry(0.22, 14, 9), hookedFishMaterial, [0, -0.3, 0], [0.72, 1.7, 0.72]),
+  catchPart(new THREE.SphereGeometry(0.04, 7, 5), hookedCatchAccentMaterial, [0.08, -0.12, 0.14]),
+  catchPart(new THREE.SphereGeometry(0.035, 7, 5), hookedCatchAccentMaterial, [-0.1, -0.3, 0.15]),
+  catchPart(new THREE.SphereGeometry(0.04, 7, 5), hookedCatchAccentMaterial, [0.07, -0.48, 0.13])
+]);
+
+registerCatchModel('tunicate', [
+  catchPart(new THREE.SphereGeometry(0.25, 14, 9), hookedFishMaterial, [0, -0.28, 0], [0.92, 1.25, 0.9]),
+  catchPart(new THREE.CylinderGeometry(0.045, 0.08, 0.15, 9), hookedCatchAccentMaterial, [-0.08, -0.03, 0], null, [0, 0, -0.2]),
+  catchPart(new THREE.CylinderGeometry(0.035, 0.07, 0.13, 9), hookedCatchAccentMaterial, [0.1, -0.08, 0.04], null, [0, 0, 0.28])
+]);
+
+function getCatchModelKey(fish) {
+  if (fish.form === 'fish') {
+    if (['갈치', '뱀장어', '붕장어', '갯장어', '학꽁치'].includes(fish.name)) return 'eel';
+    if (['가자미', '도다리', '넙치', '서대'].includes(fish.name)) return 'flatfish';
+    if (['홍어', '가오리'].includes(fish.name)) return 'ray';
+    return 'fish';
+  }
+  if (fish.form === 'ceph') return ['문어', '낙지', '주꾸미', '피문어'].includes(fish.name) ? 'octopus' : 'squid';
+  if (fish.form === 'shell') return ['전복', '소라', '골뱅이'].includes(fish.name) ? 'snail' : 'shell';
+  if (fish.form === 'crust') return fish.name.includes('게') || fish.name.includes('크랩') ? 'crab' : 'shrimp';
+  if (fish.name === '성게') return 'urchin';
+  if (fish.name === '해삼') return 'cucumber';
+  return 'tunicate';
+}
+
+function setHookedCatchModel(fish) {
+  Object.values(hookedCatchModels).forEach(model => { model.visible = false; });
+  hookedCatchModels[getCatchModelKey(fish)].visible = true;
+  hookedFishMaterial.color.set(rarityColors[fish.tier]);
+  hookedCatchAccentMaterial.color.copy(hookedFishMaterial.color).offsetHSL(0.03, -0.12, 0.2);
+}
+
 hookedFish.visible = false;
 scene.add(hookedFish);
 
@@ -606,7 +728,7 @@ function reelIn() {
     catchAnimating = true;
     catchAnimationStart = performance.now();
     pendingCatch = { fish, isNew, count: catchCounts[fish.id] };
-    hookedFishMaterial.color.set(rarityColors[fish.tier]);
+    setHookedCatchModel(fish);
     hookedFish.visible = true;
     splashAt(bobPosition, 1.6);
     catchStartPosition.copy(bobPosition);
