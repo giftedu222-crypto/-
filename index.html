@@ -35,7 +35,13 @@
   <section id="collection" class="panel-screen" aria-label="해산물 도감">
     <div class="panel-card collection-card">
       <header class="panel-header"><div><h2>해산물 도감</h2></div><div id="collection-progress">0 / 90 등록</div></header>
-      <div class="dex-categories"><span>어류 50</span><span>연체류 24</span><span>갑각류 12</span><span>기타 4</span></div>
+      <div class="dex-categories" aria-label="도감 분류 필터">
+        <button type="button" class="dex-category active" data-group="전체">전체 90</button>
+        <button type="button" class="dex-category" data-group="어류">어류 50</button>
+        <button type="button" class="dex-category" data-group="연체류">연체류 24</button>
+        <button type="button" class="dex-category" data-group="갑각류">갑각류 12</button>
+        <button type="button" class="dex-category" data-group="기타">기타 4</button>
+      </div>
       <article id="collection-detail" class="collection-detail" hidden>
         <div class="detail-photo-frame"><img id="detail-photo" alt=""><a id="detail-credit" target="_blank" rel="noreferrer">사진 출처</a></div>
         <div class="detail-copy"><div class="detail-top"><span id="detail-number">No.001</span><span id="detail-rarity">일반</span></div><h3 id="detail-name"></h3><p id="detail-meta"></p><p id="detail-trait"></p><strong id="detail-season"></strong><p id="detail-recipe"></p><button id="detail-close" type="button">상세 닫기</button></div>
@@ -54,6 +60,6 @@
   </section>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="catalog-data.js?v=1"></script>
-  <script src="game.js?v=21"></script>
+  <script src="game.js?v=22"></script>
 </body>
 </html>

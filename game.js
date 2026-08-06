@@ -15,6 +15,7 @@ const clockTimeEl = document.querySelector('#clock-time');
 const fishCatalog = window.SEAFOOD_CATALOG || [];
 const pageSize = 16;
 let catalogPage = 0;
+let catalogFilter = '전체';
 const rarityNames = { 1: '일반', 2: '희귀', 3: '전설' };
 const rarityColors = { 1: '#4d916e', 2: '#b66a28', 3: '#7551a8' };
 const trashCatches = [
@@ -49,15 +50,22 @@ function saveCollection() {
 }
 
 function renderCollection() {
-  const pageCount = Math.ceil(fishCatalog.length / pageSize);
+  const filteredCatalog = catalogFilter === '전체' ? fishCatalog : fishCatalog.filter(fish => fish.group === catalogFilter);
+  const pageCount = Math.max(1, Math.ceil(filteredCatalog.length / pageSize));
   catalogPage = THREE.MathUtils.clamp(catalogPage, 0, Math.max(0, pageCount - 1));
   const start = catalogPage * pageSize;
-  collectionProgress.textContent = `${discoveredFish.size} / ${fishCatalog.length} 등록`;
+  const filteredDiscovered = filteredCatalog.filter(fish => discoveredFish.has(fish.id)).length;
+  collectionProgress.textContent = `${filteredDiscovered} / ${filteredCatalog.length} 등록`;
   document.querySelector('#page-label').textContent = `${catalogPage + 1} / ${pageCount}`;
   document.querySelector('#page-prev').disabled = catalogPage === 0;
   document.querySelector('#page-next').disabled = catalogPage === pageCount - 1;
-  collectionGrid.innerHTML = fishCatalog.slice(start, start + pageSize).map((fish, offset) => {
-    const index = start + offset;
+  document.querySelectorAll('.dex-category').forEach(button => {
+    const active = button.dataset.group === catalogFilter;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', String(active));
+  });
+  collectionGrid.innerHTML = filteredCatalog.slice(start, start + pageSize).map(fish => {
+    const index = fishCatalog.indexOf(fish);
     const found = discoveredFish.has(fish.id);
     return `<button type="button" class="fish-card ${found ? '' : 'locked'}" data-index="${index}">
       <img src="${fish.photo}" alt=""><span class="fish-number">${String(index + 1).padStart(4, '0')}</span>
@@ -825,6 +833,13 @@ document.querySelector('#collection-back').addEventListener('click', () => {
   collectionScreen.style.display = 'none';
   startScreen.style.display = 'flex';
 });
+
+document.querySelectorAll('.dex-category').forEach(button => button.addEventListener('click', () => {
+  catalogFilter = button.dataset.group;
+  catalogPage = 0;
+  document.querySelector('#collection-detail').hidden = true;
+  renderCollection();
+}));
 
 document.querySelector('#page-prev').addEventListener('click', () => {
   catalogPage -= 1;
