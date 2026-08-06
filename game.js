@@ -23,7 +23,7 @@ let catalogPage = 0;
 let catalogFilter = '전체';
 let catalogTier = '전체';
 const rarityNames = { 1: '일반', 2: '희귀', 3: '전설' };
-const rarityColors = { 1: '#4d916e', 2: '#b66a28', 3: '#7551a8' };
+const rarityColors = { 1: '#4d916e', 2: '#1976c9', 3: '#e0a800' };
 const trashCatches = [
   { id: 'trash-can', name: '찌그러진 빈 캔', group: '바다 쓰레기', model: 'trash-can', icon: '🥫', trait: '물고기인 줄 알았지만 오래된 빈 캔이었습니다.', isTrash: true },
   { id: 'trash-bottle', name: '떠다니던 페트병', group: '바다 쓰레기', model: 'trash-bottle', icon: '🧴', trait: '바다를 떠돌던 페트병을 건져 올렸습니다.', isTrash: true },
