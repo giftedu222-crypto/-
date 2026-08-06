@@ -15,6 +15,7 @@ const clockTimeEl = document.querySelector('#clock-time');
 const seasonWidgetEl = document.querySelector('#season-widget');
 const seasonTitleEl = document.querySelector('#season-title');
 const seasonListEl = document.querySelector('#season-list');
+const seasonToggleEl = document.querySelector('#season-toggle');
 
 const fishCatalog = window.SEAFOOD_CATALOG || [];
 const pageSize = 16;
@@ -60,6 +61,21 @@ function renderSeasonWidget() {
   seasonTitleEl.textContent = `${month}월 제철 해산물`;
   seasonListEl.innerHTML = featured.map(fish => `<li><span>${groupIcons[fish.group]}</span><b>${fish.name}</b><small>${fish.season}</small></li>`).join('');
 }
+
+function setSeasonWidgetCollapsed(collapsed) {
+  seasonWidgetEl.classList.toggle('collapsed', collapsed);
+  seasonToggleEl.textContent = collapsed ? '+' : '−';
+  seasonToggleEl.setAttribute('aria-expanded', String(!collapsed));
+  seasonToggleEl.setAttribute('aria-label', collapsed ? '제철 목록 펼치기' : '제철 목록 접기');
+}
+
+seasonToggleEl.addEventListener('click', () => {
+  const collapsed = !seasonWidgetEl.classList.contains('collapsed');
+  setSeasonWidgetCollapsed(collapsed);
+  try { localStorage.setItem('season-widget-collapsed-v1', collapsed ? '1' : '0'); } catch {}
+});
+
+try { setSeasonWidgetCollapsed(localStorage.getItem('season-widget-collapsed-v1') === '1'); } catch { setSeasonWidgetCollapsed(false); }
 
 let discoveredFish = new Set();
 let catchCounts = {};
