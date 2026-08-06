@@ -1,0 +1,736 @@
+const canvas = document.querySelector('#game');
+const statusEl = document.querySelector('#status');
+const startScreen = document.querySelector('#start');
+const collectionScreen = document.querySelector('#collection');
+const collectionGrid = document.querySelector('#collection-grid');
+const collectionProgress = document.querySelector('#collection-progress');
+const catchInfo = document.querySelector('#catch-info');
+const menuBack = document.querySelector('#menu-back');
+const locationScreen = document.querySelector('#location-select');
+const currentPlaceEl = document.querySelector('#current-place');
+
+const fishCatalog = window.SEAFOOD_CATALOG || [];
+const pageSize = 16;
+let catalogPage = 0;
+const rarityNames = { 1: '일반', 2: '희귀', 3: '전설' };
+const rarityColors = { 1: '#4d916e', 2: '#b66a28', 3: '#7551a8' };
+const fishingPlaces = {
+  amnam: { name: '암남공원 방파제', sky: 0x91cfe0, fog: 0x8bc8db, water: [0x0b4169, 0x082f56, 0x061f3f], sun: 0xffd281, light: 0xffdfad, sunHeight: 38, preferred: ['전갱이'] },
+  yeongdo: { name: '영도 신방파제', sky: 0x789fb8, fog: 0x779aab, water: [0x0a3559, 0x072944, 0x041a31], sun: 0xffe0a8, light: 0xd9e7ed, sunHeight: 31, preferred: ['갈치', '전갱이', '붕장어'] },
+  dadaepo: { name: '다대포 · 몰운대', sky: 0xd99070, fog: 0xb98270, water: [0x104a72, 0x0b365b, 0x072341], sun: 0xffb657, light: 0xffc88b, sunHeight: 17, preferred: ['농어', '감성돔'] }
+};
+let selectedFishingPlace = null;
+
+let discoveredFish = new Set();
+let catchCounts = {};
+try {
+  discoveredFish = new Set(JSON.parse(localStorage.getItem('seafood-dex-collection-v1') || '[]'));
+  catchCounts = JSON.parse(localStorage.getItem('seafood-dex-catch-counts-v1') || '{}');
+} catch {
+  discoveredFish = new Set();
+  catchCounts = {};
+}
+
+function saveCollection() {
+  try {
+    localStorage.setItem('seafood-dex-collection-v1', JSON.stringify([...discoveredFish]));
+    localStorage.setItem('seafood-dex-catch-counts-v1', JSON.stringify(catchCounts));
+  } catch {}
+}
+
+function renderCollection() {
+  const pageCount = Math.ceil(fishCatalog.length / pageSize);
+  catalogPage = THREE.MathUtils.clamp(catalogPage, 0, Math.max(0, pageCount - 1));
+  const start = catalogPage * pageSize;
+  collectionProgress.textContent = `${discoveredFish.size} / ${fishCatalog.length} 등록`;
+  document.querySelector('#page-label').textContent = `${catalogPage + 1} / ${pageCount}`;
+  document.querySelector('#page-prev').disabled = catalogPage === 0;
+  document.querySelector('#page-next').disabled = catalogPage === pageCount - 1;
+  collectionGrid.innerHTML = fishCatalog.slice(start, start + pageSize).map((fish, offset) => {
+    const index = start + offset;
+    const found = discoveredFish.has(fish.id);
+    return `<button type="button" class="fish-card ${found ? '' : 'locked'}" data-index="${index}">
+      <img src="${fish.photo}" alt=""><span class="fish-number">${String(index + 1).padStart(4, '0')}</span>
+      <strong>${fish.name}</strong><small>${fish.group} · ${rarityNames[fish.tier]} · ${found ? '등록 완료' : '미등록'}</small>
+    </button>`;
+  }).join('');
+  collectionGrid.querySelectorAll('.fish-card').forEach(card => card.addEventListener('click', () => showCatalogDetail(Number(card.dataset.index))));
+}
+
+function showCatalogDetail(index) {
+  const fish = fishCatalog[index];
+  const found = discoveredFish.has(fish.id);
+  const detail = document.querySelector('#collection-detail');
+  const photo = document.querySelector('#detail-photo');
+  photo.src = fish.photo;
+  photo.alt = `${fish.name} 실제 사진`;
+  photo.classList.toggle('is-locked', !found);
+  document.querySelector('#detail-number').textContent = `No.${String(index + 1).padStart(3, '0')}`;
+  document.querySelector('#detail-rarity').textContent = rarityNames[fish.tier];
+  document.querySelector('#detail-name').textContent = fish.name;
+  document.querySelector('#detail-meta').textContent = `${fish.group} · ${found ? '등록 완료' : '미등록 · 회색 미리보기'}`;
+  document.querySelector('#detail-trait').textContent = fish.trait;
+  document.querySelector('#detail-season').textContent = `대표 제철 ${fish.season} · 지역별 차이 있음`;
+  document.querySelector('#detail-recipe').textContent = `추천 요리: ${fish.recipe}`;
+  const credit = document.querySelector('#detail-credit');
+  credit.href = fish.source;
+  credit.textContent = `사진 출처 · ${fish.license}`;
+  detail.hidden = false;
+  detail.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function showCatchInformation(fish, isNew, count) {
+  const catchLabel = document.querySelector('#catch-label');
+  catchLabel.textContent = isNew ? 'NEW CATCH' : 'DUPLICATE';
+  catchLabel.classList.toggle('duplicate', !isNew);
+  document.querySelector('#caught-icon').innerHTML = `<img src="${fish.photo}" alt="${fish.name}">`;
+  document.querySelector('#caught-kind').textContent = `${fish.group} · ${rarityNames[fish.tier]}`;
+  document.querySelector('#caught-name').textContent = fish.name;
+  document.querySelector('#caught-description').textContent = fish.trait;
+  document.querySelector('#caught-season').textContent = fish.season;
+  document.querySelector('#caught-state').textContent = isNew ? '새로 발견!' : `중복 획득 · 총 ${count}회`;
+  catchInfo.style.setProperty('--catch-color', rarityColors[fish.tier]);
+  catchInfo.style.display = 'flex';
+}
+
+function pickCatch() {
+  if (selectedFishingPlace && Math.random() < 0.3) {
+    const localPool = fishCatalog.filter(fish => selectedFishingPlace.preferred.includes(fish.name));
+    if (localPool.length) return localPool[Math.floor(Math.random() * localPool.length)];
+  }
+  const roll = Math.random();
+  const tier = roll < 0.06 ? 3 : roll < 0.28 ? 2 : 1;
+  const pool = fishCatalog.filter(fish => fish.tier === tier);
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x8bc8db, 0.011);
+
+const camera = new THREE.PerspectiveCamera(65, innerWidth / innerHeight, 0.1, 800);
+camera.position.set(0, 2.35, 11);
+camera.lookAt(0, 0.2, -16);
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setClearColor(0x91cfe0);
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.shadowMap.enabled = true;
+
+scene.add(new THREE.HemisphereLight(0xe9fbff, 0x183b48, 2.1));
+const sunLight = new THREE.DirectionalLight(0xffdfad, 2.6);
+sunLight.position.set(-35, 45, 20);
+scene.add(sunLight);
+
+const sun = new THREE.Mesh(
+  new THREE.SphereGeometry(5.5, 24, 16),
+  new THREE.MeshBasicMaterial({ color: 0xffd281, fog: false })
+);
+sun.position.set(-52, 38, -145);
+scene.add(sun);
+
+// Layered Gerstner-like waves made from several moving sine bands.
+const waterGeometry = new THREE.PlaneGeometry(600, 600, 90, 90);
+const waterPosition = waterGeometry.attributes.position;
+function applyWaterGradient(colors) {
+  const nearWater = new THREE.Color(colors[0]);
+  const middleWater = new THREE.Color(colors[1]);
+  const deepWater = new THREE.Color(colors[2]);
+  const waterColors = [];
+  for (let i = 0; i < waterPosition.count; i++) {
+    const distance = THREE.MathUtils.clamp((waterPosition.getY(i) + 4) / 125, 0, 1);
+    const color = distance < 0.45
+      ? nearWater.clone().lerp(middleWater, distance / 0.45)
+      : middleWater.clone().lerp(deepWater, (distance - 0.45) / 0.55);
+    waterColors.push(color.r, color.g, color.b);
+  }
+  waterGeometry.setAttribute('color', new THREE.Float32BufferAttribute(waterColors, 3));
+  waterGeometry.attributes.color.needsUpdate = true;
+}
+applyWaterGradient(fishingPlaces.amnam.water);
+const waterMaterial = new THREE.MeshLambertMaterial({
+  color: 0xffffff,
+  vertexColors: true,
+  transparent: true,
+  opacity: 0.98,
+  flatShading: false
+});
+const water = new THREE.Mesh(waterGeometry, waterMaterial);
+water.rotation.x = -Math.PI / 2;
+scene.add(water);
+
+function applyFishingPlace(place) {
+  selectedFishingPlace = place;
+  renderer.setClearColor(place.sky);
+  scene.fog.color.set(place.fog);
+  applyWaterGradient(place.water);
+  sun.material.color.set(place.sun);
+  sun.position.y = place.sunHeight;
+  sunLight.color.set(place.light);
+  currentPlaceEl.textContent = `현재 장소 · ${place.name}`;
+  currentPlaceEl.style.display = 'block';
+}
+
+const shore = new THREE.Mesh(
+  new THREE.PlaneGeometry(38, 24),
+  new THREE.MeshStandardMaterial({ color: 0xcbb27f, roughness: 0.95 })
+);
+shore.rotation.x = -Math.PI / 2;
+shore.position.set(0, -0.08, 16);
+scene.add(shore);
+
+for (let i = 0; i < 34; i++) {
+  const radius = 0.28 + Math.random() * 0.9;
+  const rockColor = new THREE.Color().setHSL(0.54 + Math.random() * 0.035, 0.12, 0.17 + Math.random() * 0.07);
+  const rock = new THREE.Mesh(
+    new THREE.DodecahedronGeometry(radius, 1),
+    new THREE.MeshStandardMaterial({ color: rockColor, roughness: 0.96 })
+  );
+  const x = (Math.random() - 0.5) * 42;
+  const z = 4 + Math.random() * 24;
+  rock.position.set(x, radius * 0.2, z);
+  rock.scale.set(0.75 + Math.random() * 0.8, 0.45 + Math.random() * 0.55, 0.7 + Math.random() * 0.8);
+  rock.rotation.set(Math.random() * 0.45, Math.random() * Math.PI, Math.random() * 0.35);
+  rock.receiveShadow = true;
+  scene.add(rock);
+
+  if (i % 4 === 0) {
+    const moss = new THREE.Mesh(
+      new THREE.SphereGeometry(radius * 0.52, 10, 7),
+      new THREE.MeshStandardMaterial({ color: 0x344f3e, roughness: 1 })
+    );
+    moss.position.set(x, radius * 0.58, z);
+    moss.scale.set(0.85, 0.16, 0.65);
+    moss.rotation.y = Math.random() * Math.PI;
+    scene.add(moss);
+  }
+}
+
+const islands = new THREE.Group();
+for (let i = 0; i < 11; i++) {
+  const height = 11 + Math.random() * 18;
+  const radius = 9 + Math.random() * 10;
+  const mountainColor = new THREE.Color().setHSL(0.45 + Math.random() * 0.025, 0.28, 0.19 + Math.random() * 0.055);
+  const mountain = new THREE.Mesh(
+    new THREE.ConeGeometry(radius, height, 9 + Math.floor(Math.random() * 3), 3),
+    new THREE.MeshStandardMaterial({ color: mountainColor, roughness: 1, flatShading: true })
+  );
+  mountain.position.set(-76 + i * 15.5, height * 0.5 - 0.6, -78 - Math.random() * 28);
+  mountain.scale.z = 0.58 + Math.random() * 0.25;
+  mountain.rotation.y = Math.random() * Math.PI;
+  islands.add(mountain);
+
+  const foothill = new THREE.Mesh(
+    new THREE.DodecahedronGeometry(radius * 0.85, 1),
+    new THREE.MeshStandardMaterial({ color: 0x254942, roughness: 1, flatShading: true })
+  );
+  foothill.position.set(mountain.position.x + (Math.random() - 0.5) * 6, 1.1, mountain.position.z + 5);
+  foothill.scale.set(1.35, 0.35, 0.72);
+  islands.add(foothill);
+}
+scene.add(islands);
+
+// Detailed first-person fishing rod.
+const handRig = new THREE.Group();
+camera.add(handRig);
+scene.add(camera);
+handRig.position.set(0.42, -0.72, -1.0);
+handRig.rotation.set(0.08, -0.08, 0);
+
+const rod = new THREE.Group();
+rod.rotation.set(-0.1, -0.22, 1.25);
+handRig.add(rod);
+
+const corkMaterial = new THREE.MeshStandardMaterial({ color: 0x9b6c3c, roughness: 0.9 });
+const darkMaterial = new THREE.MeshStandardMaterial({ color: 0x17232a, roughness: 0.3, metalness: 0.65 });
+const goldMaterial = new THREE.MeshStandardMaterial({ color: 0xd6a536, roughness: 0.24, metalness: 0.82 });
+const skinMaterial = new THREE.MeshStandardMaterial({ color: 0xd79a70, roughness: 0.8 });
+
+const rearGrip = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.065, 0.5, 14), corkMaterial);
+rearGrip.rotation.z = Math.PI / 2;
+rearGrip.position.x = -0.12;
+rod.add(rearGrip);
+
+const foreGrip = new THREE.Mesh(new THREE.CylinderGeometry(0.043, 0.055, 0.34, 14), corkMaterial);
+foreGrip.rotation.z = Math.PI / 2;
+foreGrip.position.x = 0.32;
+rod.add(foreGrip);
+
+const rodCurve = new THREE.CatmullRomCurve3([
+  new THREE.Vector3(0.38, 0, 0),
+  new THREE.Vector3(1.0, 0.012, 0),
+  new THREE.Vector3(1.72, 0.035, 0),
+  new THREE.Vector3(2.42, 0.08, 0),
+  new THREE.Vector3(2.92, 0.13, 0)
+]);
+const pole = new THREE.Mesh(new THREE.TubeGeometry(rodCurve, 30, 0.018, 8, false), darkMaterial);
+rod.add(pole);
+
+for (const x of [0.8, 1.35, 1.9, 2.4, 2.82]) {
+  const guide = new THREE.Mesh(new THREE.TorusGeometry(0.038 - x * 0.006, 0.006, 6, 12), goldMaterial);
+  guide.rotation.y = Math.PI / 2;
+  guide.position.set(x, -0.035 + x * 0.02, 0);
+  rod.add(guide);
+}
+
+const reelBody = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.17, 16), goldMaterial);
+reelBody.rotation.x = Math.PI / 2;
+reelBody.position.set(0.25, -0.14, 0);
+rod.add(reelBody);
+const reelSpool = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.2, 16), darkMaterial);
+reelSpool.rotation.x = Math.PI / 2;
+reelSpool.position.copy(reelBody.position);
+rod.add(reelSpool);
+const reelHandle = new THREE.Group();
+reelHandle.position.set(0.25, -0.14, 0.13);
+const crank = new THREE.Mesh(new THREE.BoxGeometry(0.19, 0.025, 0.025), goldMaterial);
+reelHandle.add(crank);
+const knob = new THREE.Mesh(new THREE.SphereGeometry(0.035, 10, 8), darkMaterial);
+knob.position.x = 0.1;
+reelHandle.add(knob);
+rod.add(reelHandle);
+
+const hand = new THREE.Mesh(new THREE.CylinderGeometry(0.078, 0.09, 0.28, 12), skinMaterial);
+hand.rotation.z = Math.PI / 2;
+hand.position.set(0.04, -0.04, 0.02);
+rod.add(hand);
+
+const bobber = new THREE.Group();
+const bobberTop = new THREE.Mesh(
+  new THREE.SphereGeometry(0.105, 16, 12),
+  new THREE.MeshStandardMaterial({ color: 0xff4d36, emissive: 0x4b0b06, roughness: 0.4 })
+);
+const bobberBottom = new THREE.Mesh(
+  new THREE.SphereGeometry(0.085, 16, 12),
+  new THREE.MeshStandardMaterial({ color: 0xf4f1d8, roughness: 0.55 })
+);
+bobberBottom.position.y = -0.09;
+bobber.add(bobberTop, bobberBottom);
+bobber.visible = false;
+scene.add(bobber);
+
+const hookedFish = new THREE.Group();
+const hookedFishMaterial = new THREE.MeshStandardMaterial({ color: 0x4f916f, roughness: 0.48, metalness: 0.08 });
+const hookedFishBody = new THREE.Mesh(new THREE.SphereGeometry(0.24, 16, 10), hookedFishMaterial);
+hookedFishBody.scale.set(1.65, 0.72, 0.58);
+hookedFish.add(hookedFishBody);
+const hookedFishTail = new THREE.Mesh(new THREE.ConeGeometry(0.17, 0.3, 3), hookedFishMaterial);
+hookedFishTail.rotation.z = -Math.PI / 2;
+hookedFishTail.position.x = -0.43;
+hookedFish.add(hookedFishTail);
+const hookedFishFin = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.22, 3), hookedFishMaterial);
+hookedFishFin.position.set(0.02, 0.17, 0);
+hookedFish.add(hookedFishFin);
+const hookedFishEye = new THREE.Mesh(new THREE.SphereGeometry(0.025, 8, 6), new THREE.MeshBasicMaterial({ color: 0x07131a }));
+hookedFishEye.position.set(0.25, 0.055, 0.12);
+hookedFish.add(hookedFishEye);
+hookedFish.visible = false;
+scene.add(hookedFish);
+
+const line = new THREE.Line(
+  new THREE.BufferGeometry(),
+  new THREE.LineBasicMaterial({ color: 0xeaffff, transparent: true, opacity: 0.82 })
+);
+scene.add(line);
+
+const rippleMaterial = new THREE.MeshBasicMaterial({
+  color: 0xc7f6ff,
+  transparent: true,
+  opacity: 0,
+  side: THREE.DoubleSide,
+  depthWrite: false
+});
+const ripple = new THREE.Mesh(new THREE.RingGeometry(0.18, 0.22, 36), rippleMaterial);
+ripple.rotation.x = -Math.PI / 2;
+ripple.visible = false;
+scene.add(ripple);
+
+const splashBursts = [];
+function splashAt(point, strength = 1) {
+  const count = Math.round(36 * strength);
+  const positions = new Float32Array(count * 3);
+  const velocities = [];
+  for (let i = 0; i < count; i++) {
+    const index = i * 3;
+    positions[index] = point.x + (Math.random() - 0.5) * 0.18;
+    positions[index + 1] = Math.max(0.14, point.y) + Math.random() * 0.12;
+    positions[index + 2] = point.z + (Math.random() - 0.5) * 0.18;
+    const angle = Math.random() * Math.PI * 2;
+    const spread = (0.5 + Math.random() * 1.05) * strength;
+    velocities.push(new THREE.Vector3(Math.cos(angle) * spread, (1.8 + Math.random() * 2.5) * strength, Math.sin(angle) * spread));
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  const material = new THREE.PointsMaterial({ color: 0xffffff, size: 0.15 * strength, transparent: true, opacity: 1, depthWrite: false, sizeAttenuation: true });
+  const burst = new THREE.Points(geometry, material);
+  burst.userData = { velocities, life: 1.02 + strength * 0.16, maxLife: 1.02 + strength * 0.16 };
+  splashBursts.push(burst);
+  scene.add(burst);
+}
+
+function updateSplashes(delta) {
+  for (let burstIndex = splashBursts.length - 1; burstIndex >= 0; burstIndex--) {
+    const burst = splashBursts[burstIndex];
+    const positions = burst.geometry.attributes.position;
+    burst.userData.life -= delta;
+    for (let i = 0; i < positions.count; i++) {
+      const velocity = burst.userData.velocities[i];
+      velocity.y -= 4.8 * delta;
+      positions.setXYZ(i, positions.getX(i) + velocity.x * delta, positions.getY(i) + velocity.y * delta, positions.getZ(i) + velocity.z * delta);
+    }
+    positions.needsUpdate = true;
+    burst.material.opacity = Math.max(0, burst.userData.life / burst.userData.maxLife);
+    if (burst.userData.life <= 0) {
+      scene.remove(burst);
+      burst.geometry.dispose();
+      burst.material.dispose();
+      splashBursts.splice(burstIndex, 1);
+    }
+  }
+}
+
+let started = false;
+let cast = false;
+let launched = false;
+let landed = false;
+let bite = false;
+let catchAnimating = false;
+let catchAnimationStart = 0;
+let pendingCatch = null;
+let retrieving = false;
+let retrievalStart = 0;
+let castTime = 0;
+let biteAt = 0;
+const castStart = new THREE.Vector3();
+const castControl = new THREE.Vector3();
+const target = new THREE.Vector3();
+const bobPosition = new THREE.Vector3();
+const rodTip = new THREE.Vector3();
+const catchStartPosition = new THREE.Vector3();
+const catchControlPosition = new THREE.Vector3();
+const catchEndPosition = new THREE.Vector3();
+const retrieveStartPosition = new THREE.Vector3();
+const retrieveControlPosition = new THREE.Vector3();
+const retrieveEndPosition = new THREE.Vector3();
+
+function easeInOut(value) {
+  return value < 0.5 ? 2 * value * value : 1 - Math.pow(-2 * value + 2, 2) / 2;
+}
+
+function getRodTip() {
+  camera.updateMatrixWorld(true);
+  rodTip.set(2.92, 0.13, 0).applyMatrix4(rod.matrixWorld);
+  return rodTip;
+}
+
+function setBezierPoint(out, start, control, end, amount) {
+  const inverse = 1 - amount;
+  out.set(
+    inverse * inverse * start.x + 2 * inverse * amount * control.x + amount * amount * end.x,
+    inverse * inverse * start.y + 2 * inverse * amount * control.y + amount * amount * end.y,
+    inverse * inverse * start.z + 2 * inverse * amount * control.z + amount * amount * end.z
+  );
+}
+
+function updateLine(flightAmount = 1) {
+  const tip = getRodTip().clone();
+  const points = [];
+  for (let i = 0; i <= 22; i++) {
+    const amount = i / 22;
+    const point = tip.clone().lerp(bobPosition, amount);
+    const slack = landed ? -Math.sin(amount * Math.PI) * 0.18 : Math.sin(amount * Math.PI) * (0.28 + flightAmount * 0.25);
+    point.y += slack;
+    points.push(point);
+  }
+  line.geometry.setFromPoints(points);
+}
+
+function castRod() {
+  if (!started || cast || catchAnimating || retrieving) return;
+  cast = true;
+  launched = false;
+  landed = false;
+  bite = false;
+  castTime = performance.now();
+  biteAt = 3.1 + Math.random() * 2.1;
+  getRodTip();
+  castStart.copy(rodTip);
+  target.set((Math.random() - 0.5) * 2.7, 0.11, -7 - Math.random() * 5);
+  bobPosition.copy(castStart);
+  bobber.position.copy(bobPosition);
+  bobber.visible = true;
+  hookedFish.visible = false;
+  line.visible = true;
+  ripple.visible = false;
+  statusEl.textContent = '낚싯대를 휘둘러 찌를 던지는 중...';
+}
+
+function reelIn() {
+  if (!cast) return;
+  if (bite) {
+    const fish = pickCatch();
+    const isNew = !discoveredFish.has(fish.id);
+    discoveredFish.add(fish.id);
+    catchCounts[fish.id] = (catchCounts[fish.id] || 0) + 1;
+    saveCollection();
+    renderCollection();
+    statusEl.textContent = `챔질 성공! 낚싯대를 들어 올리는 중...`;
+    cast = false;
+    landed = false;
+    bite = false;
+    ripple.visible = false;
+    catchAnimating = true;
+    catchAnimationStart = performance.now();
+    pendingCatch = { fish, isNew, count: catchCounts[fish.id] };
+    hookedFishMaterial.color.set(rarityColors[fish.tier]);
+    hookedFish.visible = true;
+    splashAt(bobPosition, 1.6);
+    catchStartPosition.copy(bobPosition);
+    camera.updateMatrixWorld(true);
+    catchEndPosition.set(0.25, 0.38, -2.15).applyMatrix4(camera.matrixWorld);
+    catchControlPosition.copy(catchStartPosition).lerp(catchEndPosition, 0.5);
+    catchControlPosition.y += 3.4;
+    return;
+  }
+  const pulledFromWater = landed;
+  statusEl.textContent = '너무 일찍 감았습니다! 찌를 회수하는 중...';
+  cast = false;
+  landed = false;
+  bite = false;
+  retrieving = true;
+  hookedFish.visible = false;
+  retrievalStart = performance.now();
+  retrieveStartPosition.copy(bobPosition);
+  camera.updateMatrixWorld(true);
+  retrieveEndPosition.set(0.22, 0.22, -1.75).applyMatrix4(camera.matrixWorld);
+  retrieveControlPosition.copy(retrieveStartPosition).lerp(retrieveEndPosition, 0.5);
+  retrieveControlPosition.y += 1.8;
+  ripple.visible = false;
+  if (pulledFromWater) splashAt(bobPosition, 1.05);
+}
+
+document.querySelector('#start-fishing').addEventListener('click', () => {
+  startScreen.style.display = 'none';
+  locationScreen.style.display = 'flex';
+});
+
+document.querySelectorAll('.location-card').forEach(card => card.addEventListener('click', () => {
+  const place = fishingPlaces[card.dataset.place];
+  applyFishingPlace(place);
+  started = true;
+  locationScreen.style.display = 'none';
+  menuBack.style.display = 'block';
+  statusEl.textContent = `${place.name} · 바다를 클릭해 찌를 던져보세요`;
+}));
+
+document.querySelector('#location-back').addEventListener('click', () => {
+  locationScreen.style.display = 'none';
+  startScreen.style.display = 'flex';
+});
+
+document.querySelector('#open-collection').addEventListener('click', () => {
+  renderCollection();
+  startScreen.style.display = 'none';
+  collectionScreen.style.display = 'flex';
+});
+
+document.querySelector('#collection-back').addEventListener('click', () => {
+  collectionScreen.style.display = 'none';
+  startScreen.style.display = 'flex';
+});
+
+document.querySelector('#page-prev').addEventListener('click', () => {
+  catalogPage -= 1;
+  renderCollection();
+});
+
+document.querySelector('#page-next').addEventListener('click', () => {
+  catalogPage += 1;
+  renderCollection();
+});
+
+document.querySelector('#detail-close').addEventListener('click', () => {
+  document.querySelector('#collection-detail').hidden = true;
+});
+
+catchInfo.addEventListener('click', event => {
+  if (event.target !== catchInfo) return;
+  catchInfo.style.display = 'none';
+  statusEl.textContent = '바다를 클릭해 다시 찌를 던져보세요';
+});
+
+menuBack.addEventListener('click', () => {
+  started = false;
+  cast = false;
+  landed = false;
+  bite = false;
+  catchAnimating = false;
+  pendingCatch = null;
+  retrieving = false;
+  bobber.visible = false;
+  hookedFish.visible = false;
+  line.visible = false;
+  ripple.visible = false;
+  catchInfo.style.display = 'none';
+  menuBack.style.display = 'none';
+  currentPlaceEl.style.display = 'none';
+  selectedFishingPlace = null;
+  startScreen.style.display = 'flex';
+});
+
+renderCollection();
+
+canvas.addEventListener('click', castRod);
+document.addEventListener('keydown', event => {
+  if (event.code === 'Space') {
+    event.preventDefault();
+    reelIn();
+  }
+});
+
+let frame = 0;
+let previousFrameTime = 0;
+function loop(time) {
+  requestAnimationFrame(loop);
+  frame += 1;
+  const frameDelta = Math.min(0.034, Math.max(0.001, (time - previousFrameTime) / 1000));
+  previousFrameTime = time;
+  const seconds = time * 0.001;
+
+  const positions = waterGeometry.attributes.position;
+  for (let i = 0; i < positions.count; i++) {
+    const x = positions.getX(i);
+    const z = positions.getY(i);
+    const height =
+      Math.sin(x * 0.105 + seconds * 0.5) * 0.045 +
+      Math.sin(z * 0.15 - seconds * 0.38) * 0.026 +
+      Math.cos((x + z) * 0.072 + seconds * 0.3) * 0.016;
+    positions.setZ(i, height);
+  }
+  positions.needsUpdate = true;
+  if (frame % 5 === 0) waterGeometry.computeVertexNormals();
+  updateSplashes(frameDelta);
+
+  let elapsed = (time - castTime) / 1000;
+  let castingPose = 0;
+  let catchLiftPose = 0;
+  let retrievePose = 0;
+
+  if (cast) {
+    if (elapsed < 0.34) {
+      const backSwing = easeInOut(elapsed / 0.34);
+      castingPose = backSwing * 0.48;
+      bobPosition.copy(getRodTip());
+      bobber.position.copy(bobPosition);
+      updateLine(0);
+    } else if (elapsed < 1.42) {
+      const flight = Math.min(1, (elapsed - 0.34) / 1.08);
+      if (!launched) {
+        launched = true;
+        castStart.copy(getRodTip());
+        castControl.copy(castStart).lerp(target, 0.5);
+        castControl.y += 6.2;
+      }
+      const forwardSwing = easeInOut(Math.min(1, flight * 2.2));
+      castingPose = 0.48 - forwardSwing * 1.05;
+      setBezierPoint(bobPosition, castStart, castControl, target, flight);
+      bobber.position.copy(bobPosition);
+      bobber.rotation.x += 0.18;
+      bobber.rotation.z += 0.12;
+      updateLine(flight);
+    } else {
+      if (!landed) {
+        landed = true;
+        bobPosition.copy(target);
+        ripple.position.set(target.x, 0.13, target.z);
+        ripple.scale.setScalar(0.25);
+        rippleMaterial.opacity = 0.85;
+        ripple.visible = true;
+        splashAt(target, 1.25);
+        statusEl.textContent = '첨벙! 찌를 바라보며 입질을 기다리세요';
+      }
+      const settle = Math.min(1, (elapsed - 1.42) / 0.65);
+      castingPose = -0.57 * (1 - easeInOut(settle));
+      bobPosition.y = 0.13 + Math.sin(seconds * 2.8) * 0.045;
+      if (bite) bobPosition.y = 0.04 + Math.abs(Math.sin(seconds * 11)) * 0.24;
+      bobber.position.copy(bobPosition);
+      updateLine(1);
+
+      const rippleAge = elapsed - 1.42;
+      ripple.scale.setScalar(0.25 + rippleAge * 1.45);
+      rippleMaterial.opacity = Math.max(0, 0.82 - rippleAge * 0.55);
+
+      if (!bite && elapsed > biteAt) {
+        bite = true;
+        statusEl.textContent = '입질이다! SPACE를 눌러 릴을 감으세요!';
+      }
+    }
+  }
+
+  if (catchAnimating) {
+    const catchElapsed = (time - catchAnimationStart) / 1000;
+    const liftProgress = Math.min(1, catchElapsed / 1.55);
+    const smoothLift = easeInOut(liftProgress);
+    setBezierPoint(bobPosition, catchStartPosition, catchControlPosition, catchEndPosition, smoothLift);
+    bobber.position.copy(bobPosition);
+    bobber.rotation.x += 0.24;
+    hookedFish.position.copy(bobPosition);
+    hookedFish.position.y -= 0.36;
+    hookedFish.rotation.z = Math.sin(seconds * 18) * 0.22;
+    hookedFish.rotation.y = Math.sin(seconds * 11) * 0.38;
+    updateLine(liftProgress);
+    catchLiftPose = liftProgress < 0.55
+      ? easeInOut(liftProgress / 0.55)
+      : 1 - easeInOut((liftProgress - 0.55) / 0.45) * 0.32;
+
+    if (liftProgress >= 1) {
+      const result = pendingCatch;
+      catchAnimating = false;
+      pendingCatch = null;
+      bobber.visible = false;
+      hookedFish.visible = false;
+      line.visible = false;
+      statusEl.textContent = `${result.fish.name}을(를) 낚았습니다!`;
+      showCatchInformation(result.fish, result.isNew, result.count);
+    }
+  }
+
+  if (retrieving) {
+    const retrieveElapsed = (time - retrievalStart) / 1000;
+    const retrieveProgress = Math.min(1, retrieveElapsed / 1.05);
+    const settleProgress = THREE.MathUtils.clamp((retrieveElapsed - 1.05) / 0.35, 0, 1);
+    const smoothRetrieve = easeInOut(retrieveProgress);
+    setBezierPoint(bobPosition, retrieveStartPosition, retrieveControlPosition, retrieveEndPosition, smoothRetrieve);
+    bobber.position.copy(bobPosition);
+    bobber.rotation.x += 0.2;
+    updateLine(retrieveProgress);
+    retrievePose = retrieveElapsed <= 1.05
+      ? easeInOut(retrieveProgress) * 0.55
+      : 0.55 * (1 - easeInOut(settleProgress));
+
+    if (retrieveElapsed >= 1.4) {
+      retrieving = false;
+      bobber.visible = false;
+      line.visible = false;
+      statusEl.textContent = '입질 전 회수로 실패! 바다를 클릭해 바로 다시 던지세요';
+    }
+  }
+
+  handRig.rotation.z = castingPose + catchLiftPose * 0.72 + retrievePose * 0.22 + (bite ? Math.sin(seconds * 25) * 0.025 : 0);
+  handRig.rotation.x = 0.08 - Math.abs(castingPose) * 0.12 - catchLiftPose * 0.38 - retrievePose * 0.12;
+  handRig.position.y = -0.72 + catchLiftPose * 0.24 + retrievePose * 0.045;
+  if (bite) reelHandle.rotation.z -= 0.08;
+  if (catchAnimating) reelHandle.rotation.z -= 0.22;
+  if (retrieving) reelHandle.rotation.z -= 0.3;
+
+  renderer.render(scene, camera);
+}
+
+loop(0);
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});

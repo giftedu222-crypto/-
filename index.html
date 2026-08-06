@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>부산을 낚아보았다</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <canvas id="game"></canvas>
+  <div id="hud">
+    <div class="brand">BUSAN <span>FISHING</span></div>
+    <button id="menu-back" type="button">← 처음으로</button>
+    <div id="current-place"></div>
+    <div id="status">바다를 클릭해 찌를 던져보세요</div>
+    <div id="help"><b>클릭</b> 찌 던지기 · <b>SPACE</b> 입질 후 릴 감기</div>
+  </div>
+  <section id="location-select" class="panel-screen" aria-label="낚시 장소 선택">
+    <div class="panel-card location-panel">
+      <div class="location-heading"><small>BUSAN FISHING MAP</small><h2>어디로 떠날까요?</h2><p>장소마다 풍경과 자주 만나는 수산생물이 달라집니다.</p></div>
+      <div id="location-grid" class="location-grid">
+        <button type="button" class="location-card amnam" data-place="amnam"><span class="location-icon">🌊</span><small>서구 암남동</small><strong>암남공원 방파제</strong><p>해안 절벽 아래, 전갱이 떼를 만날 수 있는 생활낚시 명소</p><em>전갱이 출현 보너스</em></button>
+        <button type="button" class="location-card yeongdo" data-place="yeongdo"><span class="location-icon">⚓</span><small>영도구 동삼동</small><strong>영도 신방파제</strong><p>긴 방파제와 짙푸른 바다에서 즐기는 조용한 낚시</p><em>갈치 · 전갱이 · 붕장어 보너스</em></button>
+        <button type="button" class="location-card dadaepo" data-place="dadaepo"><span class="location-icon">🌅</span><small>사하구 다대동</small><strong>다대포 · 몰운대</strong><p>낙동강과 남해가 만나는 붉은 노을의 낚시 포인트</p><em>농어 · 감성돔 출현 보너스</em></button>
+      </div>
+      <button id="location-back" class="back-button" type="button">← 뒤로가기</button>
+    </div>
+  </section>
+  <div id="start">
+    <div class="wave">〰</div><h1>부산을 낚아보았다</h1>
+    <p>낚싯대를 던져 부산 바다의 물고기를 낚아보세요.</p>
+    <div class="start-actions"><button id="start-fishing" type="button">낚시 시작하기</button><button id="open-collection" class="secondary" type="button">수산생물 도감</button></div>
+  </div>
+  <section id="collection" class="panel-screen" aria-label="수산생물 도감">
+    <div class="panel-card collection-card">
+      <header class="panel-header"><div><small>BLUE HOLE</small><h2>SEADEX</h2></div><div id="collection-progress">0 / 90 등록</div></header>
+      <div class="dex-categories"><span>어류 50</span><span>연체류 24</span><span>갑각류 12</span><span>기타 4</span></div>
+      <article id="collection-detail" class="collection-detail" hidden>
+        <div class="detail-photo-frame"><img id="detail-photo" alt=""><a id="detail-credit" target="_blank" rel="noreferrer">사진 출처</a></div>
+        <div class="detail-copy"><div class="detail-top"><span id="detail-number">No.001</span><span id="detail-rarity">일반</span></div><h3 id="detail-name"></h3><p id="detail-meta"></p><p id="detail-trait"></p><strong id="detail-season"></strong><p id="detail-recipe"></p><button id="detail-close" type="button">상세 닫기</button></div>
+      </article>
+      <div id="collection-grid" class="collection-grid"></div>
+      <div class="dex-footer"><button id="collection-back" class="back-button" type="button">← 뒤로가기</button><div class="pagination"><button id="page-prev" type="button">이전</button><span id="page-label">1 / 6</span><button id="page-next" type="button">다음</button></div></div>
+    </div>
+  </section>
+  <section id="catch-info" class="panel-screen" aria-live="polite">
+    <div class="panel-card catch-card">
+      <div id="catch-label" class="new-label">NEW CATCH</div><div id="caught-icon" class="caught-icon">🐟</div><small id="caught-kind">FISH</small><h2 id="caught-name">우럭</h2>
+      <p id="caught-description"></p>
+      <dl><div><dt>대표 제철</dt><dd id="caught-season"></dd></div><div><dt>도감 상태</dt><dd id="caught-state"></dd></div></dl>
+      <p class="dismiss-hint">카드 바깥을 클릭하면 낚시로 돌아갑니다</p>
+    </div>
+  </section>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="catalog-data.js?v=1"></script>
+  <script src="game.js?v=17"></script>
+</body>
+</html>
