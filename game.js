@@ -121,7 +121,7 @@ function renderCollection() {
     const found = discoveredFish.has(fish.id);
     return `<button type="button" class="fish-card ${found ? '' : 'locked'}" data-index="${index}">
       <img src="${fish.photo}" alt=""><span class="fish-number">${String(index + 1).padStart(4, '0')}</span>
-      <strong>${fish.name}</strong><small>${fish.group} · ${rarityNames[fish.tier]} · ${found ? '등록 완료' : '미등록'}</small>
+      <strong>${fish.name}</strong><small>${fish.group} · <span class="rarity-text tier-${fish.tier}">${rarityNames[fish.tier]}</span> · ${found ? '등록 완료' : '미등록'}</small>
     </button>`;
   }).join('') : '<p class="dex-empty">이 분류에는 해당 등급의 해산물이 없습니다.</p>';
   collectionGrid.querySelectorAll('.fish-card').forEach(card => card.addEventListener('click', () => showCatalogDetail(Number(card.dataset.index))));
@@ -136,7 +136,9 @@ function showCatalogDetail(index) {
   photo.alt = `${fish.name} 실제 사진`;
   photo.classList.toggle('is-locked', !found);
   document.querySelector('#detail-number').textContent = `No.${String(index + 1).padStart(3, '0')}`;
-  document.querySelector('#detail-rarity').textContent = rarityNames[fish.tier];
+  const detailRarity = document.querySelector('#detail-rarity');
+  detailRarity.textContent = rarityNames[fish.tier];
+  detailRarity.className = `tier-${fish.tier}`;
   document.querySelector('#detail-name').textContent = fish.name;
   document.querySelector('#detail-meta').textContent = `${fish.group} · ${found ? '등록 완료' : '미등록 · 회색 미리보기'}`;
   document.querySelector('#detail-trait').textContent = fish.trait;
@@ -156,7 +158,9 @@ function showCatchInformation(fish, isNew, count) {
   const caughtIcon = document.querySelector('#caught-icon');
   caughtIcon.classList.toggle('is-trash', fish.isTrash);
   caughtIcon.innerHTML = fish.isTrash ? fish.icon : `<img src="${fish.photo}" alt="${fish.name}">`;
-  document.querySelector('#caught-kind').textContent = fish.isTrash ? fish.group : `${fish.group} · ${rarityNames[fish.tier]}`;
+  const caughtKind = document.querySelector('#caught-kind');
+  caughtKind.textContent = fish.isTrash ? fish.group : `${fish.group} · ${rarityNames[fish.tier]}`;
+  caughtKind.style.color = fish.isTrash ? '#9eb0b7' : rarityColors[fish.tier];
   document.querySelector('#caught-name').textContent = fish.name;
   document.querySelector('#caught-description').textContent = fish.trait;
   document.querySelector('#caught-season').textContent = fish.isTrash ? '해당 없음' : fish.season;
