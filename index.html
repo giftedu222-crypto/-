@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>낚아무라</title>
-  <link rel="stylesheet" href="style.css?v=6" />
+  <link rel="stylesheet" href="style.css?v=7" />
 </head>
 <body>
   <canvas id="game"></canvas>
@@ -45,6 +45,7 @@
         <button type="button" class="dex-category" data-group="연체류">연체류 24</button>
         <button type="button" class="dex-category" data-group="갑각류">갑각류 12</button>
         <button type="button" class="dex-category" data-group="기타">기타 4</button>
+        <button type="button" id="dex-caught-only" class="dex-caught-toggle" aria-pressed="false">✓ 잡은 것만</button>
       </div>
       <div class="dex-rarities" aria-label="도감 희귀도 필터">
         <small>희귀도</small>
@@ -71,6 +72,6 @@
   </section>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="catalog-data.js?v=1"></script>
-  <script src="game.js?v=28"></script>
+  <script src="game.js?v=29"></script>
 </body>
 </html>

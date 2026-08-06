@@ -22,6 +22,7 @@ const pageSize = 16;
 let catalogPage = 0;
 let catalogFilter = '전체';
 let catalogTier = '전체';
+let catalogCaughtOnly = false;
 const rarityNames = { 1: '일반', 2: '희귀', 3: '전설' };
 const rarityColors = { 1: '#4d916e', 2: '#1976c9', 3: '#e0a800' };
 const trashCatches = [
@@ -97,12 +98,13 @@ function saveCollection() {
 
 function renderCollection() {
   const groupFilteredCatalog = catalogFilter === '전체' ? fishCatalog : fishCatalog.filter(fish => fish.group === catalogFilter);
-  const filteredCatalog = catalogTier === '전체' ? groupFilteredCatalog : groupFilteredCatalog.filter(fish => fish.tier === Number(catalogTier));
+  const tierFilteredCatalog = catalogTier === '전체' ? groupFilteredCatalog : groupFilteredCatalog.filter(fish => fish.tier === Number(catalogTier));
+  const filteredCatalog = catalogCaughtOnly ? tierFilteredCatalog.filter(fish => discoveredFish.has(fish.id)) : tierFilteredCatalog;
   const pageCount = Math.max(1, Math.ceil(filteredCatalog.length / pageSize));
   catalogPage = THREE.MathUtils.clamp(catalogPage, 0, Math.max(0, pageCount - 1));
   const start = catalogPage * pageSize;
-  const filteredDiscovered = filteredCatalog.filter(fish => discoveredFish.has(fish.id)).length;
-  collectionProgress.textContent = `${filteredDiscovered} / ${filteredCatalog.length} 등록`;
+  const filteredDiscovered = tierFilteredCatalog.filter(fish => discoveredFish.has(fish.id)).length;
+  collectionProgress.textContent = `${filteredDiscovered} / ${tierFilteredCatalog.length} 등록`;
   document.querySelector('#page-label').textContent = `${catalogPage + 1} / ${pageCount}`;
   document.querySelector('#page-prev').disabled = catalogPage === 0;
   document.querySelector('#page-next').disabled = catalogPage === pageCount - 1;
@@ -116,6 +118,9 @@ function renderCollection() {
     button.classList.toggle('active', active);
     button.setAttribute('aria-pressed', String(active));
   });
+  const caughtOnlyButton = document.querySelector('#dex-caught-only');
+  caughtOnlyButton.classList.toggle('active', catalogCaughtOnly);
+  caughtOnlyButton.setAttribute('aria-pressed', String(catalogCaughtOnly));
   collectionGrid.innerHTML = filteredCatalog.length ? filteredCatalog.slice(start, start + pageSize).map(fish => {
     const index = fishCatalog.indexOf(fish);
     const found = discoveredFish.has(fish.id);
@@ -123,7 +128,7 @@ function renderCollection() {
       <img src="${fish.photo}" alt=""><span class="fish-number">${String(index + 1).padStart(4, '0')}</span>
       <strong>${fish.name}</strong><small>${fish.group} · <span class="rarity-text tier-${fish.tier}">${rarityNames[fish.tier]}</span> · ${found ? '등록 완료' : '미등록'}</small>
     </button>`;
-  }).join('') : '<p class="dex-empty">이 분류에는 해당 등급의 해산물이 없습니다.</p>';
+  }).join('') : `<p class="dex-empty">${catalogCaughtOnly ? '아직 잡은 해산물이 없습니다.' : '이 분류에는 해당 등급의 해산물이 없습니다.'}</p>`;
   collectionGrid.querySelectorAll('.fish-card').forEach(card => card.addEventListener('click', () => showCatalogDetail(Number(card.dataset.index))));
 }
 
@@ -906,6 +911,13 @@ document.querySelectorAll('.dex-rarity').forEach(button => button.addEventListen
   document.querySelector('#collection-detail').hidden = true;
   renderCollection();
 }));
+
+document.querySelector('#dex-caught-only').addEventListener('click', () => {
+  catalogCaughtOnly = !catalogCaughtOnly;
+  catalogPage = 0;
+  document.querySelector('#collection-detail').hidden = true;
+  renderCollection();
+});
 
 document.querySelector('#page-prev').addEventListener('click', () => {
   catalogPage -= 1;
