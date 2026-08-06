@@ -8,6 +8,9 @@ const catchInfo = document.querySelector('#catch-info');
 const menuBack = document.querySelector('#menu-back');
 const locationScreen = document.querySelector('#location-select');
 const currentPlaceEl = document.querySelector('#current-place');
+const gameClockEl = document.querySelector('#game-clock');
+const clockIconEl = document.querySelector('#clock-icon');
+const clockTimeEl = document.querySelector('#clock-time');
 
 const fishCatalog = window.SEAFOOD_CATALOG || [];
 const pageSize = 16;
@@ -15,11 +18,13 @@ let catalogPage = 0;
 const rarityNames = { 1: '일반', 2: '희귀', 3: '전설' };
 const rarityColors = { 1: '#4d916e', 2: '#b66a28', 3: '#7551a8' };
 const fishingPlaces = {
-  amnam: { name: '암남공원 방파제', sky: 0x91cfe0, fog: 0x8bc8db, water: [0x0b4169, 0x082f56, 0x061f3f], sun: 0xffd281, light: 0xffdfad, sunHeight: 38, preferred: ['전갱이'] },
-  yeongdo: { name: '영도 신방파제', sky: 0x789fb8, fog: 0x779aab, water: [0x0a3559, 0x072944, 0x041a31], sun: 0xffe0a8, light: 0xd9e7ed, sunHeight: 31, preferred: ['갈치', '전갱이', '붕장어'] },
-  dadaepo: { name: '다대포 · 몰운대', sky: 0xd99070, fog: 0xb98270, water: [0x104a72, 0x0b365b, 0x072341], sun: 0xffb657, light: 0xffc88b, sunHeight: 17, preferred: ['농어', '감성돔'] }
+  amnam: { id: 'amnam', name: '암남공원 방파제', sky: 0x91cfe0, fog: 0x8bc8db, water: [0x0b4169, 0x082f56, 0x061f3f], sun: 0xffd281, light: 0xffdfad, preferred: ['전갱이'] },
+  yeongdo: { id: 'yeongdo', name: '영도 신방파제', sky: 0x789fb8, fog: 0x779aab, water: [0x0a3559, 0x072944, 0x041a31], sun: 0xffe0a8, light: 0xd9e7ed, preferred: ['갈치', '전갱이', '붕장어'] },
+  dadaepo: { id: 'dadaepo', name: '다대포 · 몰운대', sky: 0xd99070, fog: 0xb98270, water: [0x104a72, 0x0b365b, 0x072341], sun: 0xffb657, light: 0xffc88b, preferred: ['농어', '감성돔'] }
 };
 let selectedFishingPlace = null;
+const initialClock = new Date();
+let gameMinutes = initialClock.getHours() * 60 + initialClock.getMinutes();
 
 let discoveredFish = new Set();
 let catchCounts = {};
@@ -118,7 +123,8 @@ renderer.setClearColor(0x91cfe0);
 renderer.outputEncoding = THREE.sRGBEncoding;
 renderer.shadowMap.enabled = true;
 
-scene.add(new THREE.HemisphereLight(0xe9fbff, 0x183b48, 2.1));
+const hemisphereLight = new THREE.HemisphereLight(0xe9fbff, 0x183b48, 2.1);
+scene.add(hemisphereLight);
 const sunLight = new THREE.DirectionalLight(0xffdfad, 2.6);
 sunLight.position.set(-35, 45, 20);
 scene.add(sunLight);
@@ -129,6 +135,23 @@ const sun = new THREE.Mesh(
 );
 sun.position.set(-52, 38, -145);
 scene.add(sun);
+
+const moon = new THREE.Mesh(
+  new THREE.SphereGeometry(4.1, 24, 16),
+  new THREE.MeshBasicMaterial({ color: 0xe6efff, fog: false })
+);
+moon.visible = false;
+scene.add(moon);
+
+const starPositions = [];
+for (let i = 0; i < 420; i++) {
+  starPositions.push((Math.random() - 0.5) * 320, 18 + Math.random() * 110, -70 - Math.random() * 260);
+}
+const starGeometry = new THREE.BufferGeometry();
+starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starPositions, 3));
+const starMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.72, transparent: true, opacity: 0, depthWrite: false, fog: false });
+const stars = new THREE.Points(starGeometry, starMaterial);
+scene.add(stars);
 
 // Layered Gerstner-like waves made from several moving sine bands.
 const waterGeometry = new THREE.PlaneGeometry(600, 600, 90, 90);
@@ -162,14 +185,44 @@ scene.add(water);
 
 function applyFishingPlace(place) {
   selectedFishingPlace = place;
-  renderer.setClearColor(place.sky);
-  scene.fog.color.set(place.fog);
   applyWaterGradient(place.water);
   sun.material.color.set(place.sun);
-  sun.position.y = place.sunHeight;
   sunLight.color.set(place.light);
   currentPlaceEl.textContent = `현재 장소 · ${place.name}`;
   currentPlaceEl.style.display = 'block';
+  gameClockEl.style.display = 'grid';
+  Object.entries(placeScenery).forEach(([key, group]) => { group.visible = key === place.id; });
+  updateTimeOfDay(0);
+}
+
+function updateTimeOfDay(delta) {
+  if (!selectedFishingPlace) return;
+  if (started) gameMinutes = (gameMinutes + delta) % 1440;
+  const hour = Math.floor(gameMinutes / 60);
+  const minute = Math.floor(gameMinutes % 60);
+  const solarAngle = ((gameMinutes - 360) / 1440) * Math.PI * 2;
+  const altitude = Math.sin(solarAngle);
+  const daylight = THREE.MathUtils.clamp((altitude + 0.08) / 0.43, 0, 1);
+  const twilight = Math.max(0, 1 - Math.abs(altitude) * 7);
+
+  const skyColor = new THREE.Color(0x020817).lerp(new THREE.Color(selectedFishingPlace.sky), daylight);
+  skyColor.lerp(new THREE.Color(0xcf6b55), twilight * 0.48);
+  const fogColor = new THREE.Color(0x081322).lerp(new THREE.Color(selectedFishingPlace.fog), daylight);
+  fogColor.lerp(new THREE.Color(0xa55e55), twilight * 0.3);
+  renderer.setClearColor(skyColor);
+  scene.fog.color.copy(fogColor);
+
+  sun.position.set(Math.cos(solarAngle) * 105, altitude * 72, -145);
+  sun.visible = altitude > -0.08;
+  moon.position.set(-Math.cos(solarAngle) * 100, -altitude * 62, -150);
+  moon.visible = altitude < 0.12;
+  starMaterial.opacity = THREE.MathUtils.clamp((-altitude + 0.02) / 0.42, 0, 0.92);
+  sunLight.intensity = 0.12 + daylight * 2.48;
+  hemisphereLight.intensity = 0.28 + daylight * 1.82;
+  waterMaterial.color.setScalar(0.28 + daylight * 0.72);
+
+  clockTimeEl.textContent = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+  clockIconEl.textContent = altitude > 0.18 ? '☀' : altitude > -0.08 ? '◐' : '☾';
 }
 
 const shore = new THREE.Mesh(
@@ -230,6 +283,76 @@ for (let i = 0; i < 11; i++) {
   islands.add(foothill);
 }
 scene.add(islands);
+
+// Place-specific Busan landmarks.
+const placeScenery = { amnam: new THREE.Group(), yeongdo: new THREE.Group(), dadaepo: new THREE.Group() };
+
+const amnamCliff = new THREE.Mesh(
+  new THREE.DodecahedronGeometry(7.5, 1),
+  new THREE.MeshStandardMaterial({ color: 0x263c3b, roughness: 1, flatShading: true })
+);
+amnamCliff.position.set(-18, 5.2, -31);
+amnamCliff.scale.set(1.35, 1.55, 0.72);
+placeScenery.amnam.add(amnamCliff);
+const cableStart = new THREE.Vector3(-22, 15.5, -29);
+const cableEnd = new THREE.Vector3(19, 18, -49);
+placeScenery.amnam.add(new THREE.Line(
+  new THREE.BufferGeometry().setFromPoints([cableStart, cableEnd]),
+  new THREE.LineBasicMaterial({ color: 0x1a2226 })
+));
+for (let i = 0; i < 3; i++) {
+  const gondola = new THREE.Mesh(
+    new THREE.BoxGeometry(1.3, 0.82, 0.86),
+    new THREE.MeshStandardMaterial({ color: i % 2 ? 0xf0b43d : 0xd34738, roughness: 0.55 })
+  );
+  gondola.position.lerpVectors(cableStart, cableEnd, 0.2 + i * 0.28);
+  gondola.position.y -= 0.62;
+  placeScenery.amnam.add(gondola);
+}
+
+const breakwater = new THREE.Mesh(
+  new THREE.BoxGeometry(31, 0.8, 3.2),
+  new THREE.MeshStandardMaterial({ color: 0x555d5f, roughness: 0.96 })
+);
+breakwater.position.set(-4, 0.25, -25);
+breakwater.rotation.y = -0.08;
+placeScenery.yeongdo.add(breakwater);
+const lighthouse = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.85, 1.15, 5.8, 14),
+  new THREE.MeshStandardMaterial({ color: 0xededdf, roughness: 0.68 })
+);
+lighthouse.position.set(-18.2, 3.35, -23.9);
+placeScenery.yeongdo.add(lighthouse);
+const lighthouseTop = new THREE.Mesh(
+  new THREE.CylinderGeometry(1.05, 0.88, 1.3, 14),
+  new THREE.MeshStandardMaterial({ color: 0xd84c43, roughness: 0.55 })
+);
+lighthouseTop.position.set(-18.2, 6.85, -23.9);
+placeScenery.yeongdo.add(lighthouseTop);
+const ship = new THREE.Group();
+const shipHull = new THREE.Mesh(new THREE.BoxGeometry(9, 1.3, 2.2), new THREE.MeshStandardMaterial({ color: 0x253d50, roughness: 0.8 }));
+const shipCabin = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.7, 1.7), new THREE.MeshStandardMaterial({ color: 0xd8ddd7, roughness: 0.7 }));
+shipCabin.position.set(1.2, 1.25, 0);
+ship.add(shipHull, shipCabin);
+ship.position.set(20, 1.2, -48);
+placeScenery.yeongdo.add(ship);
+
+const sandMaterial = new THREE.MeshStandardMaterial({ color: 0xa58c65, roughness: 1 });
+for (let i = 0; i < 4; i++) {
+  const sandbar = new THREE.Mesh(new THREE.SphereGeometry(5 + i * 1.1, 18, 10), sandMaterial);
+  sandbar.scale.set(1.8, 0.07, 0.48);
+  sandbar.position.set(-18 + i * 12, 0.02, -26 - (i % 2) * 9);
+  placeScenery.dadaepo.add(sandbar);
+}
+const reedMaterial = new THREE.MeshStandardMaterial({ color: 0x6e6938, roughness: 1 });
+for (let i = 0; i < 34; i++) {
+  const reed = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.035, 1.1 + Math.random() * 1.2, 5), reedMaterial);
+  reed.position.set((i % 2 ? 1 : -1) * (8 + Math.random() * 8), 0.7, 4 + Math.random() * 12);
+  reed.rotation.z = (Math.random() - 0.5) * 0.15;
+  placeScenery.dadaepo.add(reed);
+}
+
+Object.values(placeScenery).forEach(group => { group.visible = false; scene.add(group); });
 
 // Detailed first-person fishing rod.
 const handRig = new THREE.Group();
@@ -575,6 +698,7 @@ menuBack.addEventListener('click', () => {
   catchInfo.style.display = 'none';
   menuBack.style.display = 'none';
   currentPlaceEl.style.display = 'none';
+  gameClockEl.style.display = 'none';
   selectedFishingPlace = null;
   startScreen.style.display = 'flex';
 });
@@ -597,6 +721,7 @@ function loop(time) {
   const frameDelta = Math.min(0.034, Math.max(0.001, (time - previousFrameTime) / 1000));
   previousFrameTime = time;
   const seconds = time * 0.001;
+  updateTimeOfDay(frameDelta);
 
   const positions = waterGeometry.attributes.position;
   for (let i = 0; i < positions.count; i++) {
