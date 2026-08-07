@@ -170,7 +170,6 @@ function showCatalogDetail(index) {
   credit.href = fish.source;
   credit.textContent = `사진 출처 · ${fish.license}`;
   detail.hidden = false;
-  detail.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function showCatchInformation(fish, isNew, count) {
@@ -993,6 +992,16 @@ document.querySelector('#page-next').addEventListener('click', () => {
 
 document.querySelector('#detail-close').addEventListener('click', () => {
   document.querySelector('#collection-detail').hidden = true;
+});
+
+document.querySelector('#collection-detail').addEventListener('click', event => {
+  if (event.target !== event.currentTarget) return;
+  event.currentTarget.hidden = true;
+});
+
+document.addEventListener('keydown', event => {
+  const detail = document.querySelector('#collection-detail');
+  if (event.key === 'Escape' && !detail.hidden) detail.hidden = true;
 });
 
 catchInfo.addEventListener('click', event => {
