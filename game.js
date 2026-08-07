@@ -792,8 +792,20 @@ function createCrane(color = 0xe58a2e) {
 
 // AMNAM PARK / SONGDO: pine cliffs, cable cars, rocky coves and the Songdo skyline.
 const amnam = placeScenery.amnam;
-addRidge(amnam, 104, 18, 0x315d52, [-42, 0, -110], 0.4);
+addRidge(amnam, 165, 18, 0x315d52, [-62, 0, -110], 0.4);
 addRidge(amnam, 78, 12, 0x294d47, [50, 0, -118], 1.9);
+for (let i = 0; i < 5; i++) {
+  const cliff = new THREE.Mesh(new THREE.IcosahedronGeometry(5.6 + (i % 3) * 1.15, 2), coastalMaterial(i % 2 ? 0x314641 : 0x263b39, 0.98));
+  cliff.position.set(-58 + i * 5.2, 3.4 + (i % 2) * 0.7, -39 - i * 1.8);
+  cliff.scale.set(1.55, 1.3, 0.78);
+  cliff.rotation.set(0.08 * i, 0.41 * i, 0.05 * i);
+  amnam.add(cliff);
+  if (i % 2 === 0) {
+    const pine = createPine(0.82 + i * 0.035);
+    pine.position.set(cliff.position.x, cliff.position.y + 5.2, cliff.position.z + 0.2);
+    amnam.add(pine);
+  }
+}
 for (let i = 0; i < 7; i++) {
   const cliff = new THREE.Mesh(new THREE.IcosahedronGeometry(5 + (i % 3) * 1.3, 2), coastalMaterial(i % 2 ? 0x314641 : 0x263b39, 0.98));
   cliff.position.set(-32 + i * 4.2, 3.2 + (i % 2), -38 - i * 2.5);
@@ -806,7 +818,7 @@ for (let i = 0; i < 7; i++) {
     amnam.add(pine);
   }
 }
-addCoastalSkirt(amnam, -20, 58, -38, 0x2a403b, 15, 0.7);
+addCoastalSkirt(amnam, -48, 118, -38, 0x2a403b, 15, 0.7);
 const towerA = createCableTower(8.4);
 towerA.position.set(-19, 8.7, -42);
 
@@ -952,12 +964,22 @@ for (let i = 0; i < 3; i++) {
 }
 addRidge(dadaepo, 58, 6.2, 0x3d5546, [-29, 0, -53], 4.8);
 addCoastalSkirt(dadaepo, -29, 62, -49, 0x475a42, 14, 4.2);
-const molundaeTreeHeights = [4.1, 4.65, 4.35, 4.05, 3.75];
-for (let i = 0; i < 5; i++) {
-  const pine = createPine(1.35 + i * 0.12);
-  pine.position.set(-38 + i * 4.5, molundaeTreeHeights[i], -51 - i * 0.75);
+const molundaePines = [
+  [-77, 3.7, -85.5, 0.58], [-69, 5.8, -85.8, 0.64], [-60, 8.1, -86.2, 0.6],
+  [-51, 9.8, -86.5, 0.7], [-42, 9.4, -86.1, 0.62], [-32, 7.6, -85.7, 0.66],
+  [-22, 5.1, -85.4, 0.57], [-13, 2.7, -85.2, 0.54],
+  [25, 3.4, -99.5, 0.55], [33, 5.4, -99.8, 0.63], [42, 7.1, -100.1, 0.58],
+  [51, 8.2, -100.4, 0.68], [60, 7.6, -100.1, 0.61], [70, 5.7, -99.7, 0.64],
+  [80, 3.1, -99.4, 0.53],
+  [-43, 3.9, -50.2, 0.72], [-35, 5.1, -50.6, 0.78], [-27, 5.4, -51.1, 0.7],
+  [-19, 4.2, -51.5, 0.65], [-11, 2.8, -51.8, 0.58]
+];
+molundaePines.forEach(([x, y, z, scale], index) => {
+  const pine = createPine(scale);
+  pine.position.set(x, y, z);
+  pine.rotation.y = index * 0.83;
   dadaepo.add(pine);
-}
+});
 Object.values(placeScenery).forEach(group => {
   group.visible = false;
   scene.add(group);
@@ -1000,18 +1022,18 @@ const pole = new THREE.Mesh(new THREE.TubeGeometry(rodCurve, 30, 0.018, 8, false
 rod.add(pole);
 
 const guidePoints = [];
-for (const amount of [0.06, 0.12, 0.19, 0.27, 0.36, 0.46, 0.57, 0.69, 0.82, 0.975]) {
+for (const amount of [0.1, 0.24, 0.4, 0.58, 0.77, 0.975]) {
   const polePoint = rodCurve.getPointAt(amount);
-  const guideRadius = THREE.MathUtils.lerp(0.052, 0.026, amount);
+  const guideRadius = THREE.MathUtils.lerp(0.038, 0.019, amount);
   const guideCenter = polePoint.clone();
-  guideCenter.y -= guideRadius + 0.025;
-  const guide = new THREE.Mesh(new THREE.TorusGeometry(guideRadius, 0.008, 8, 18), goldMaterial);
+  guideCenter.y -= guideRadius + 0.021;
+  const guide = new THREE.Mesh(new THREE.TorusGeometry(guideRadius, 0.006, 8, 18), goldMaterial);
   guide.rotation.y = Math.PI / 2;
   guide.position.copy(guideCenter);
   rod.add(guide);
 
   const supportHeight = polePoint.y - guideCenter.y;
-  const support = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, supportHeight, 6), goldMaterial);
+  const support = new THREE.Mesh(new THREE.CylinderGeometry(0.0045, 0.0045, supportHeight, 6), goldMaterial);
   support.position.copy(polePoint).lerp(guideCenter, 0.5);
   rod.add(support);
   guidePoints.push(guideCenter);
