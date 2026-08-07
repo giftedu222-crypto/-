@@ -98,8 +98,19 @@ function renderSeasonWidget() {
 
 function renderCatchRates(place) {
   catchRatesTitleEl.textContent = place.name;
-  const rows = [...place.catchRates, { name: '기타 해산물', rate: place.otherRate }, { name: '바다 쓰레기', rate: place.trashRate }];
-  catchRatesListEl.innerHTML = rows.map(item => `<li><div><span>${item.name}</span><b>${item.rate}%</b></div><i><span style="width:${item.rate}%"></span></i></li>`).join('');
+  const rows = place.catchRates.map(item => {
+    const catalogItem = fishCatalog.find(fish => fish.name === item.name);
+    return { ...item, tier: catalogItem?.tier };
+  });
+  rows.push(
+    { name: '기타 해산물', rate: place.otherRate, label: '혼합' },
+    { name: '바다 쓰레기', rate: place.trashRate, label: '꽝', isTrash: true }
+  );
+  catchRatesListEl.innerHTML = rows.map(item => {
+    const tierClass = item.tier ? `tier-${item.tier}` : item.isTrash ? 'is-trash' : 'is-mixed';
+    const rarityLabel = item.tier ? rarityNames[item.tier] : item.label;
+    return `<li><div><span class="rate-species-name ${tierClass}">${item.name}<small class="rate-rarity ${tierClass}">${rarityLabel}</small></span><b>${item.rate}%</b></div><i><span style="width:${item.rate}%"></span></i></li>`;
+  }).join('');
 }
 
 function setSeasonWidgetCollapsed(collapsed) {
