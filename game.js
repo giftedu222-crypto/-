@@ -858,12 +858,18 @@ const breakwater = new THREE.Mesh(new THREE.BoxGeometry(38, 1.1, 4.2), coastalMa
 breakwater.position.set(-2, 0.35, -28);
 breakwater.rotation.y = -0.055;
 yeongdo.add(breakwater);
-for (let i = 0; i < 28; i++) {
-  const row = Math.floor(i / 14);
-  const column = i % 14;
-  const pod = createTetrapod(0.68 + (i % 4) * 0.11);
-  pod.position.set(-19.5 + column * 3.05 + row * 0.75, 0.06 + row * 0.55, -25.1 + row * 1.55 + (column % 2) * 0.24);
-  pod.rotation.set(0.12 * ((i % 3) - 1), i * 0.67, 0.08 * (i % 2));
+for (let i = 0; i < 25; i++) {
+  const row = i % 3;
+  const progress = Math.floor(i / 3) / 8;
+  const stacked = i % 6 === 0 || i % 9 === 0;
+  const pod = createTetrapod(0.7 + (Math.sin(i * 1.87) + 1) * 0.14);
+  pod.position.set(
+    -19 + progress * 39 + Math.sin(i * 2.43) * 1.15,
+    0.04 + row * 0.08 + Math.max(0, Math.sin(i * 1.31)) * 0.22 + (stacked ? 0.62 : 0),
+    -26.2 + row * 1.55 + Math.sin(i * 1.67) * 0.68 + (stacked ? 0.35 : 0)
+  );
+  pod.rotation.set(Math.sin(i * 0.93) * 0.34, i * 0.81, Math.cos(i * 1.17) * 0.3);
+  pod.scale.set(0.92 + (i % 4) * 0.035, 0.9 + (i % 3) * 0.055, 0.94 + (i % 5) * 0.025);
   yeongdo.add(pod);
 }
 const lighthouse = createLighthouse();
@@ -906,10 +912,10 @@ for (let i = 0; i < 6; i++) {
 }
 addRidge(dadaepo, 58, 7.2, 0x3a5043, [72, 0, -79], 5.8);
 addCoastalSkirt(dadaepo, 72, 60, -75, 0x415642, 12, 3.7);
-const estuaryBridge = new THREE.Mesh(new THREE.BoxGeometry(145, 0.42, 0.9), coastalMaterial(0x8f9997, 0.62, 0.28));
-estuaryBridge.position.set(5, 5.2, -72);
+const estuaryBridge = new THREE.Mesh(new THREE.BoxGeometry(132, 0.42, 0.9), coastalMaterial(0x8f9997, 0.62, 0.28));
+estuaryBridge.position.set(10, 5.2, -72);
 dadaepo.add(estuaryBridge);
-for (let x = -60; x <= 75; x += 15) {
+for (let x = -45; x <= 75; x += 15) {
   const pier = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.55, 5.2, 10), coastalMaterial(0x656f6d, 0.9));
   pier.position.set(x, 2.55, -72);
   dadaepo.add(pier);
@@ -979,12 +985,40 @@ const rodCurve = new THREE.CatmullRomCurve3([
 const pole = new THREE.Mesh(new THREE.TubeGeometry(rodCurve, 30, 0.018, 8, false), darkMaterial);
 rod.add(pole);
 
-for (const x of [0.8, 1.35, 1.9, 2.4, 2.82]) {
-  const guide = new THREE.Mesh(new THREE.TorusGeometry(0.038 - x * 0.006, 0.006, 6, 12), goldMaterial);
+const guidePoints = [];
+for (const amount of [0.06, 0.12, 0.19, 0.27, 0.36, 0.46, 0.57, 0.69, 0.82, 0.975]) {
+  const polePoint = rodCurve.getPointAt(amount);
+  const guideRadius = THREE.MathUtils.lerp(0.052, 0.026, amount);
+  const guideCenter = polePoint.clone();
+  guideCenter.y -= guideRadius + 0.025;
+  const guide = new THREE.Mesh(new THREE.TorusGeometry(guideRadius, 0.008, 8, 18), goldMaterial);
   guide.rotation.y = Math.PI / 2;
-  guide.position.set(x, -0.035 + x * 0.02, 0);
+  guide.position.copy(guideCenter);
   rod.add(guide);
+
+  const supportHeight = polePoint.y - guideCenter.y;
+  const support = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, supportHeight, 6), goldMaterial);
+  support.position.copy(polePoint).lerp(guideCenter, 0.5);
+  rod.add(support);
+  guidePoints.push(guideCenter);
 }
+
+const rodLineExit = guidePoints[guidePoints.length - 1].clone();
+const threadedRodLine = new THREE.Mesh(
+  new THREE.TubeGeometry(
+    new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0.25, -0.14, 0.015),
+      new THREE.Vector3(0.43, -0.08, 0.008),
+      ...guidePoints
+    ]),
+    64,
+    0.0045,
+    5,
+    false
+  ),
+  new THREE.MeshBasicMaterial({ color: 0xdff7ff, transparent: true, opacity: 0.88 })
+);
+rod.add(threadedRodLine);
 
 const reelBody = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.17, 16), goldMaterial);
 reelBody.rotation.x = Math.PI / 2;
@@ -1275,7 +1309,7 @@ function easeInOut(value) {
 
 function getRodTip() {
   camera.updateMatrixWorld(true);
-  rodTip.set(2.92, 0.13, 0).applyMatrix4(rod.matrixWorld);
+  rodTip.copy(rodLineExit).applyMatrix4(rod.matrixWorld);
   return rodTip;
 }
 
