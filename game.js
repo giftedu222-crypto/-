@@ -977,7 +977,7 @@ for (let i = 0; i < 7; i++) {
 }
 addCoastalSkirt(amnam, -48, 118, -38, 0x2a403b, 15, 0.7);
 const towerA = createCableTower(8.4);
-towerA.position.set(-19, 8.7, -42);
+towerA.position.set(-19, 8.7, -49);
 
 const songdoStation = new THREE.Group();
 const stationBase = new THREE.Mesh(new THREE.BoxGeometry(15, 1.35, 8.5), coastalMaterial(0x657174, 0.78, 0.12));
@@ -995,7 +995,7 @@ amnam.add(songdoStation);
 const towerB = createCableTower(9.2);
 towerB.position.set(23, 4.12, -57);
 amnam.add(towerA, towerB);
-const cableStart = new THREE.Vector3(-20.2, 17.35, -42);
+const cableStart = new THREE.Vector3(-20.2, 17.35, -49);
 const cableEnd = new THREE.Vector3(24.2, 13.45, -57);
 const outboundCable = createSuspendedCable(amnam, cableStart, cableEnd, 1.65, -0.42);
 const inboundCable = createSuspendedCable(amnam, cableStart.clone().add(new THREE.Vector3(0, -0.24, 0)), cableEnd.clone().add(new THREE.Vector3(0, -0.24, 0)), 1.65, 0.42);
