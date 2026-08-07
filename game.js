@@ -379,6 +379,7 @@ function applyFishingPlace(place) {
   catchRatesPanelEl.hidden = true;
   applyWaterGradient(place.water);
   shore.material.color.set(place.shore);
+  shoreWall.material.color.set(place.shore);
   shoreEdge.material.color.set(place.edge);
   scene.fog.density = place.fogDensity;
   sun.material.color.set(place.sun);
@@ -443,15 +444,23 @@ const shore = new THREE.Mesh(
   new THREE.MeshStandardMaterial({ color: 0x303b3d, map: shoreTexture, roughness: 0.94, metalness: 0.025 })
 );
 shore.rotation.x = -Math.PI / 2;
-shore.position.set(0, 0.075, 16);
+shore.position.set(0, 0.27, 16);
 shore.receiveShadow = true;
 scene.add(shore);
+
+const shoreWall = new THREE.Mesh(
+  new THREE.BoxGeometry(38, 0.64, 0.5),
+  new THREE.MeshStandardMaterial({ color: 0x303b3d, map: shoreTexture, roughness: 0.96, metalness: 0.02 })
+);
+shoreWall.position.set(0, -0.015, 4.16);
+shoreWall.receiveShadow = true;
+scene.add(shoreWall);
 
 const shoreEdge = new THREE.Mesh(
   new THREE.BoxGeometry(38, 0.18, 0.34),
   new THREE.MeshStandardMaterial({ color: 0xe3b83f, roughness: 0.72 })
 );
-shoreEdge.position.set(0, 0.16, 4.08);
+shoreEdge.position.set(0, 0.38, 4.08);
 shoreEdge.receiveShadow = true;
 scene.add(shoreEdge);
 
@@ -465,21 +474,21 @@ const bollardMaterial = new THREE.MeshStandardMaterial({ color: 0x273338, roughn
   const base = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.48, 0.1, 18), bollardMaterial);
   base.position.y = 0.05;
   bollard.add(stem, cap, base);
-  bollard.position.set(x, 0.12, 6.2);
+  bollard.position.set(x, 0.31, 6.2);
   bollard.castShadow = true;
   scene.add(bollard);
 });
 
-for (let i = 0; i < 24; i++) {
-  const radius = 0.38 + Math.random() * 1.15;
+for (let i = 0; i < 18; i++) {
+  const radius = 0.3 + Math.random() * 0.75;
   const rockColor = new THREE.Color().setHSL(0.52 + Math.random() * 0.035, 0.1, 0.12 + Math.random() * 0.09);
   const rock = new THREE.Mesh(
     new THREE.IcosahedronGeometry(radius, 2),
     new THREE.MeshStandardMaterial({ color: rockColor, roughness: 0.88, metalness: 0.03, flatShading: true })
   );
   const side = i % 2 ? 1 : -1;
-  const x = side * (6.5 + Math.random() * 15);
-  const z = 3 + Math.random() * 23;
+  const x = side * (15 + Math.random() * 12);
+  const z = -1 - Math.random() * 8;
   rock.position.set(x, radius * 0.2, z);
   rock.scale.set(0.75 + Math.random() * 0.8, 0.45 + Math.random() * 0.55, 0.7 + Math.random() * 0.8);
   rock.rotation.set(Math.random() * 0.45, Math.random() * Math.PI, Math.random() * 0.35);
@@ -736,9 +745,14 @@ amnam.add(amnamLabel);
 const yeongdo = placeScenery.yeongdo;
 addRidge(yeongdo, 145, 17, 0x344c55, [22, 0, -112], 2.5);
 addRidge(yeongdo, 80, 22, 0x263e48, [50, 0, -88], 4.2);
-const bridgeDeck = new THREE.Mesh(new THREE.BoxGeometry(112, 0.55, 1.25), coastalMaterial(0xaeb9bc, 0.55, 0.35));
-bridgeDeck.position.set(-2, 9.6, -82);
+const bridgeDeck = new THREE.Mesh(new THREE.BoxGeometry(190, 0.55, 1.25), coastalMaterial(0xaeb9bc, 0.55, 0.35));
+bridgeDeck.position.set(0, 9.6, -82);
 yeongdo.add(bridgeDeck);
+[-76, -58, 57, 75].forEach(x => {
+  const approachPier = new THREE.Mesh(new THREE.BoxGeometry(1.1, 9.4, 1.1), coastalMaterial(0x879496, 0.78, 0.18));
+  approachPier.position.set(x, 4.7, -82);
+  yeongdo.add(approachPier);
+});
 [-26, 24].forEach(x => {
   const pylon = new THREE.Mesh(new THREE.BoxGeometry(1.05, 23, 1.2), coastalMaterial(0xd4dcdd, 0.5, 0.25));
   pylon.position.set(x, 12.2, -82);
@@ -784,7 +798,7 @@ yeongdo.add(yeongdoLabel);
 const dadaepo = placeScenery.dadaepo;
 addRidge(dadaepo, 82, 14, 0x3b5144, [-48, 0, -94], 0.8);
 addRidge(dadaepo, 72, 11, 0x33483f, [53, 0, -103], 3.4);
-const sandMaterial = coastalMaterial(0xa78f65, 1);
+const sandMaterial = new THREE.MeshBasicMaterial({ color: 0x8c7654, fog: true });
 for (let i = 0; i < 6; i++) {
   const sandbar = new THREE.Mesh(new THREE.SphereGeometry(5 + i * 0.75, 28, 14), sandMaterial);
   sandbar.scale.set(1.9, 0.055, 0.5);
@@ -799,19 +813,14 @@ for (let x = -45; x <= 45; x += 15) {
   pier.position.set(x, 2.55, -72);
   dadaepo.add(pier);
 }
-const reedMaterial = coastalMaterial(0x686834, 1);
-for (let i = 0; i < 58; i++) {
+const marshMaterial = coastalMaterial(0x465936, 1);
+for (let i = 0; i < 8; i++) {
   const side = i % 2 ? 1 : -1;
-  const reed = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.045, 1.2 + Math.random() * 1.35, 6), reedMaterial);
-  reed.position.set(side * (8 + Math.random() * 10), 0.65, -3 - Math.random() * 14);
-  reed.rotation.z = (Math.random() - 0.5) * 0.16;
-  dadaepo.add(reed);
-  if (i % 4 === 0) {
-    const head = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.1, 0.45, 7), coastalMaterial(0x4f4127, 1));
-    head.position.copy(reed.position);
-    head.position.y += 0.95;
-    dadaepo.add(head);
-  }
+  const marshPatch = new THREE.Mesh(new THREE.IcosahedronGeometry(1.2 + (i % 3) * 0.3, 2), marshMaterial);
+  marshPatch.scale.set(2.1, 0.18, 0.72);
+  marshPatch.position.set(side * (20 + (i % 4) * 3.2), 0.12, -25 - (i % 3) * 5.5);
+  marshPatch.rotation.y = i * 0.74;
+  dadaepo.add(marshPatch);
 }
 for (let i = 0; i < 3; i++) {
   const boat = createFishingBoat(i % 2 ? 0x7f4338 : 0x315969);
