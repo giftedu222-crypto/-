@@ -606,10 +606,19 @@ const lanternCap = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.39, 0.18, 18
 lanternCap.position.y = 1.17;
 const lanternRoof = new THREE.Mesh(new THREE.ConeGeometry(0.4, 0.26, 18), lanternMetalMaterial);
 lanternRoof.position.y = 1.38;
-const lanternHandle = new THREE.Mesh(new THREE.TorusGeometry(0.48, 0.035, 8, 24, Math.PI), lanternMetalMaterial);
-lanternHandle.rotation.z = Math.PI;
-lanternHandle.position.y = 1.48;
-lantern.add(lanternBase, lanternLower, lanternGlass, lanternHalo, lanternBulb, lanternCore, lanternCap, lanternRoof, lanternHandle);
+const lanternHandleCurve = new THREE.QuadraticBezierCurve3(
+  new THREE.Vector3(-0.37, 1.18, 0),
+  new THREE.Vector3(0, 2.1, 0),
+  new THREE.Vector3(0.37, 1.18, 0)
+);
+const lanternHandle = new THREE.Mesh(new THREE.TubeGeometry(lanternHandleCurve, 28, 0.038, 8, false), lanternMetalMaterial);
+const lanternHandleMounts = [-0.39, 0.39].map(x => {
+  const mount = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.12, 12), lanternMetalMaterial);
+  mount.rotation.x = Math.PI / 2;
+  mount.position.set(x, 1.17, 0);
+  return mount;
+});
+lantern.add(lanternBase, lanternLower, lanternGlass, lanternHalo, lanternBulb, lanternCore, lanternCap, lanternRoof, lanternHandle, ...lanternHandleMounts);
 lantern.traverse(object => { if (object.isMesh) object.castShadow = true; });
 scene.add(lantern);
 
