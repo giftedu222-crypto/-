@@ -748,6 +748,11 @@ function coastalMaterial(color, roughness = 0.9, metalness = 0.02) {
   return new THREE.MeshStandardMaterial({ color, roughness, metalness, flatShading: false });
 }
 
+function createRoundedFacetedCliff(radius, color) {
+  const material = coastalMaterial(color, 0.98);
+  return new THREE.Mesh(new THREE.DodecahedronGeometry(radius, 1), material);
+}
+
 function createCoastalRidge(width, height, color, seed = 0) {
   const shape = new THREE.Shape();
   shape.moveTo(-width / 2, -2);
@@ -1046,7 +1051,7 @@ addRidge(amnam, 165, 18, 0x315d52, [-62, 0, -110], 0.4);
 addRidge(amnam, 78, 12, 0x294d47, [50, 0, -118], 1.9);
 for (let i = 0; i < 5; i++) {
   const cliffRadius = 5.6 + (i % 3) * 1.15;
-  const cliff = new THREE.Mesh(new THREE.IcosahedronGeometry(cliffRadius, 2), coastalMaterial(i % 2 ? 0x314641 : 0x263b39, 0.98));
+  const cliff = createRoundedFacetedCliff(cliffRadius, i % 2 ? 0x314641 : 0x263b39);
   cliff.position.set(-58 + i * 5.2, 3.4 + (i % 2) * 0.7, -39 - i * 1.8);
   cliff.scale.set(1.55, 1.3, 0.78);
   cliff.rotation.set(0.08 * i, 0.41 * i, 0.05 * i);
@@ -1061,7 +1066,7 @@ for (let i = 0; i < 5; i++) {
 }
 for (let i = 0; i < 7; i++) {
   const cliffRadius = 5 + (i % 3) * 1.3;
-  const cliff = new THREE.Mesh(new THREE.IcosahedronGeometry(cliffRadius, 2), coastalMaterial(i % 2 ? 0x314641 : 0x263b39, 0.98));
+  const cliff = createRoundedFacetedCliff(cliffRadius, i % 2 ? 0x314641 : 0x263b39);
   cliff.position.set(-32 + i * 4.2, 3.2 + (i % 2), -38 - i * 2.5);
   cliff.scale.set(1.45, 1.25, 0.72);
   cliff.rotation.set(0.1 * i, 0.35 * i, 0.06 * i);
