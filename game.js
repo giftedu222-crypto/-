@@ -56,6 +56,7 @@ let catalogCaughtOnly = false;
 let collectionReturnToGame = false;
 const rarityNames = { 1: '일반', 2: '희귀', 3: '전설' };
 const rarityColors = { 1: '#4d916e', 2: '#1976c9', 3: '#e0a800' };
+const otherCatchTierWeights = { 1: 0.72, 2: 0.22, 3: 0.06 };
 const trashCatches = [
   { id: 'trash-can', name: '찌그러진 빈 캔', group: '바다 쓰레기', model: 'trash-can', icon: '🥫', trait: '물고기인 줄 알았지만 오래된 빈 캔이었습니다.', isTrash: true },
   { id: 'trash-bottle', name: '떠다니던 페트병', group: '바다 쓰레기', model: 'trash-bottle', icon: '🧴', trait: '바다를 떠돌던 페트병을 건져 올렸습니다.', isTrash: true },
@@ -103,13 +104,16 @@ function renderCatchRates(place) {
     return { ...item, tier: catalogItem?.tier };
   });
   rows.push(
-    { name: '기타 해산물', rate: place.otherRate, label: '혼합' },
+    { name: '기타 해산물', rate: place.otherRate, label: '등급별', isOther: true },
     { name: '바다 쓰레기', rate: place.trashRate, label: '꽝', isTrash: true }
   );
   catchRatesListEl.innerHTML = rows.map(item => {
     const tierClass = item.tier ? `tier-${item.tier}` : item.isTrash ? 'is-trash' : 'is-mixed';
     const rarityLabel = item.tier ? rarityNames[item.tier] : item.label;
-    return `<li><div><span class="rate-species-name ${tierClass}">${item.name}<small class="rate-rarity ${tierClass}">${rarityLabel}</small></span><b>${item.rate}%</b></div><i><span style="width:${item.rate}%"></span></i></li>`;
+    const breakdown = item.isOther
+      ? `<div class="rate-breakdown">${[1, 2, 3].map(tier => `<span class="tier-${tier}">${rarityNames[tier]} <b>${(item.rate * otherCatchTierWeights[tier]).toFixed(2)}%</b></span>`).join('')}</div>`
+      : '';
+    return `<li><div><span class="rate-species-name ${tierClass}">${item.name}<small class="rate-rarity ${tierClass}">${rarityLabel}</small></span><b>${item.rate}%</b></div><i><span style="width:${item.rate}%"></span></i>${breakdown}</li>`;
   }).join('');
 }
 
@@ -338,7 +342,9 @@ function pickCatch() {
   const featuredNames = new Set(place.catchRates.map(entry => entry.name));
   const otherPool = fishCatalog.filter(fish => !featuredNames.has(fish.name));
   const tierRoll = Math.random();
-  const tier = tierRoll < 0.06 ? 3 : tierRoll < 0.28 ? 2 : 1;
+  const tier = tierRoll < otherCatchTierWeights[3]
+    ? 3
+    : tierRoll < otherCatchTierWeights[3] + otherCatchTierWeights[2] ? 2 : 1;
   const tierPool = otherPool.filter(fish => fish.tier === tier);
   const pool = tierPool.length ? tierPool : otherPool;
   return pool[Math.floor(Math.random() * pool.length)];
