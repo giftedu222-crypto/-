@@ -108,10 +108,16 @@ function saveCollection() {
   } catch {}
 }
 
+function getFilteredCatalog() {
+  const groupFilteredCatalog = catalogFilter === '전체' ? fishCatalog : fishCatalog.filter(fish => fish.group === catalogFilter);
+  const tierFilteredCatalog = catalogTier === '전체' ? groupFilteredCatalog : groupFilteredCatalog.filter(fish => fish.tier === Number(catalogTier));
+  return catalogCaughtOnly ? tierFilteredCatalog.filter(fish => discoveredFish.has(fish.id)) : tierFilteredCatalog;
+}
+
 function renderCollection() {
   const groupFilteredCatalog = catalogFilter === '전체' ? fishCatalog : fishCatalog.filter(fish => fish.group === catalogFilter);
   const tierFilteredCatalog = catalogTier === '전체' ? groupFilteredCatalog : groupFilteredCatalog.filter(fish => fish.tier === Number(catalogTier));
-  const filteredCatalog = catalogCaughtOnly ? tierFilteredCatalog.filter(fish => discoveredFish.has(fish.id)) : tierFilteredCatalog;
+  const filteredCatalog = getFilteredCatalog();
   const pageCount = Math.max(1, Math.ceil(filteredCatalog.length / pageSize));
   catalogPage = THREE.MathUtils.clamp(catalogPage, 0, Math.max(0, pageCount - 1));
   const start = catalogPage * pageSize;
@@ -148,6 +154,7 @@ function showCatalogDetail(index) {
   const fish = fishCatalog[index];
   const found = discoveredFish.has(fish.id);
   const detail = document.querySelector('#collection-detail');
+  detail.dataset.index = String(index);
   const photo = document.querySelector('#detail-photo');
   photo.src = fish.photo;
   photo.alt = `${fish.name} 실제 사진`;
@@ -169,7 +176,29 @@ function showCatalogDetail(index) {
   const credit = document.querySelector('#detail-credit');
   credit.href = fish.source;
   credit.textContent = `사진 출처 · ${fish.license}`;
+  const filteredCatalog = getFilteredCatalog();
+  const filteredIndex = filteredCatalog.indexOf(fish);
+  const previousFish = filteredCatalog[filteredIndex - 1];
+  const nextFish = filteredCatalog[filteredIndex + 1];
+  const previousButton = document.querySelector('#detail-prev');
+  const nextButton = document.querySelector('#detail-next');
+  previousButton.disabled = !previousFish;
+  nextButton.disabled = !nextFish;
+  previousButton.title = previousFish ? `이전 · ${previousFish.name}` : '첫 번째 해산물입니다';
+  nextButton.title = nextFish ? `다음 · ${nextFish.name}` : '마지막 해산물입니다';
   detail.hidden = false;
+}
+
+function moveCatalogDetail(direction) {
+  const detail = document.querySelector('#collection-detail');
+  const currentFish = fishCatalog[Number(detail.dataset.index)];
+  const filteredCatalog = getFilteredCatalog();
+  const nextPosition = filteredCatalog.indexOf(currentFish) + direction;
+  const nextFish = filteredCatalog[nextPosition];
+  if (!nextFish) return;
+  catalogPage = Math.floor(nextPosition / pageSize);
+  renderCollection();
+  showCatalogDetail(fishCatalog.indexOf(nextFish));
 }
 
 function showCatchInformation(fish, isNew, count) {
@@ -994,6 +1023,9 @@ document.querySelector('#detail-close').addEventListener('click', () => {
   document.querySelector('#collection-detail').hidden = true;
 });
 
+document.querySelector('#detail-prev').addEventListener('click', () => moveCatalogDetail(-1));
+document.querySelector('#detail-next').addEventListener('click', () => moveCatalogDetail(1));
+
 document.querySelector('#collection-detail').addEventListener('click', event => {
   if (event.target !== event.currentTarget) return;
   event.currentTarget.hidden = true;
@@ -1001,7 +1033,10 @@ document.querySelector('#collection-detail').addEventListener('click', event => 
 
 document.addEventListener('keydown', event => {
   const detail = document.querySelector('#collection-detail');
-  if (event.key === 'Escape' && !detail.hidden) detail.hidden = true;
+  if (detail.hidden) return;
+  if (event.key === 'Escape') detail.hidden = true;
+  if (event.key === 'ArrowLeft') moveCatalogDetail(-1);
+  if (event.key === 'ArrowRight') moveCatalogDetail(1);
 });
 
 catchInfo.addEventListener('click', event => {

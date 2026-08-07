@@ -62,10 +62,12 @@
         <button type="button" class="dex-rarity tier-3" data-tier="3">전설</button>
       </div>
       <div id="collection-detail" class="collection-detail-modal" hidden>
+      <button id="detail-prev" class="detail-nav detail-nav-prev" type="button" aria-label="이전 해산물">‹</button>
       <article class="collection-detail" role="dialog" aria-modal="true" aria-labelledby="detail-name">
         <div class="detail-photo-frame"><img id="detail-photo" alt=""><a id="detail-credit" target="_blank" rel="noreferrer">사진 출처</a></div>
         <div class="detail-copy"><div class="detail-top"><span id="detail-number">No.001</span><span id="detail-rarity">일반</span></div><h3 id="detail-name"></h3><p id="detail-meta"></p><p id="detail-trait"></p><strong id="detail-season"></strong><div class="detail-recipes"><small>추천 요리</small><div id="detail-recipe-list" class="detail-recipe-list"></div></div><button id="detail-close" type="button">상세 닫기</button></div>
       </article>
+      <button id="detail-next" class="detail-nav detail-nav-next" type="button" aria-label="다음 해산물">›</button>
       </div>
       <div id="collection-grid" class="collection-grid"></div>
       <div class="dex-footer"><button id="collection-back" class="back-button" type="button">← 뒤로가기</button><div class="pagination"><button id="page-prev" type="button">이전</button><span id="page-label">1 / 6</span><button id="page-next" type="button">다음</button></div></div>
@@ -84,6 +86,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="catalog-data.js?v=1"></script>
   <script src="recipe-photo-data.js?v=3"></script>
-  <script src="game.js?v=39"></script>
+  <script src="game.js?v=40"></script>
 </body>
 </html>
