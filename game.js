@@ -22,6 +22,7 @@ const seasonListEl = document.querySelector('#season-list');
 const seasonToggleEl = document.querySelector('#season-toggle');
 
 const fishCatalog = window.SEAFOOD_CATALOG || [];
+const recipePhotos = window.RECIPE_PHOTOS || {};
 const pageSize = 16;
 let catalogPage = 0;
 let catalogFilter = '전체';
@@ -39,27 +40,6 @@ const fishingPlaces = {
   amnam: { id: 'amnam', name: '암남공원 방파제', sky: 0x91cfe0, fog: 0x8bc8db, water: [0x0b4169, 0x082f56, 0x061f3f], sun: 0xffd281, light: 0xffdfad, catchRates: [{ name: '고등어', rate: 18 }, { name: '전갱이', rate: 15 }, { name: '감성돔', rate: 10 }, { name: '삼치', rate: 9 }, { name: '갈치', rate: 8 }, { name: '학꽁치', rate: 7 }, { name: '갑오징어', rate: 5 }], otherRate: 18, trashRate: 10 },
   yeongdo: { id: 'yeongdo', name: '영도 신방파제', sky: 0x789fb8, fog: 0x779aab, water: [0x0a3559, 0x072944, 0x041a31], sun: 0xffe0a8, light: 0xd9e7ed, catchRates: [{ name: '전갱이', rate: 17 }, { name: '갈치', rate: 14 }, { name: '붕장어', rate: 12 }, { name: '학꽁치', rate: 9 }, { name: '고등어', rate: 8 }, { name: '감성돔', rate: 6 }], otherRate: 24, trashRate: 10 },
   dadaepo: { id: 'dadaepo', name: '다대포 · 몰운대', sky: 0xd99070, fog: 0xb98270, water: [0x104a72, 0x0b365b, 0x072341], sun: 0xffb657, light: 0xffc88b, catchRates: [{ name: '도다리', rate: 16 }, { name: '감성돔', rate: 15 }, { name: '숭어', rate: 11 }, { name: '농어', rate: 9 }, { name: '참돔', rate: 7 }, { name: '벵에돔', rate: 5 }], otherRate: 27, trashRate: 10 }
-};
-const dishVisuals = {
-  '소금구이': { image: 'assets/recipes/salt-grill.jpg', source: 'https://www.flickr.com/photos/12687042@N00/3091626148' },
-  '무조림': { image: 'assets/recipes/radish-stew.jpg', source: 'https://www.flickr.com/photos/97403714@N02/32517860785' },
-  '튀김': { image: 'assets/recipes/fried-fish.jpg', source: 'https://www.flickr.com/photos/28531775@N06/4288296928' },
-  '볶음': { image: 'assets/recipes/stir-fry.jpg', source: 'https://www.flickr.com/photos/82304216@N00/5392563778' },
-  '구이': { image: 'assets/recipes/grill.jpg', source: 'https://www.flickr.com/photos/79827287@N00/259708395' },
-  '조림': { image: 'assets/recipes/braise.jpg', source: 'https://www.flickr.com/photos/93462146@N00/5605007665' },
-  '회': { image: 'assets/recipes/sashimi.jpg', source: 'https://www.flickr.com/photos/66172503@N00/8727437089' },
-  '맑은탕': { image: 'assets/recipes/clear-soup.jpg', source: 'https://www.flickr.com/photos/60162443@N00/4803652921' },
-  '찜': { image: 'assets/recipes/steam.jpg', source: 'https://www.flickr.com/photos/35034346243@N01/190535218' },
-  '전': { image: 'assets/recipes/pancake.jpg', source: 'https://www.flickr.com/photos/21065622@N08/5534738474' },
-  '숯불구이': { image: 'assets/recipes/charcoal-grill.jpg', source: 'https://www.flickr.com/photos/94862897@N00/5045430050' },
-  '덮밥': { image: 'assets/recipes/rice-bowl.jpg', source: 'https://www.flickr.com/photos/36749444@N06/52440126619' },
-  '숙회': { image: 'assets/recipes/boiled.jpg', source: 'https://www.flickr.com/photos/30265340@N00/505597425' },
-  '해물탕': { image: 'assets/recipes/seafood-stew.jpg', source: 'https://www.flickr.com/photos/67474281@N00/5794743384' },
-  '성게알밥': { image: 'assets/recipes/urchin-rice.jpg', source: 'https://www.flickr.com/photos/44934278@N04/36087370125' },
-  '비빔밥': { image: 'assets/recipes/bibimbap.jpg', source: 'https://www.flickr.com/photos/103743993@N04/12330376074' },
-  '초밥': { image: 'assets/recipes/sushi.jpg', source: 'https://www.flickr.com/photos/60162443@N00/4331316207' },
-  '해삼탕': { image: 'assets/recipes/sea-cucumber-soup.jpg', source: 'https://www.flickr.com/photos/74105777@N00/9371229003' },
-  '된장찌개': { image: 'assets/recipes/doenjang-stew.jpg', source: 'https://www.flickr.com/photos/10559879@N00/3327400231' }
 };
 let selectedFishingPlace = null;
 const initialClock = new Date();
@@ -182,9 +162,9 @@ function showCatalogDetail(index) {
   document.querySelector('#detail-season').textContent = `대표 제철 ${fish.season} · 지역별 차이 있음`;
   const recipeNames = fish.recipe.split(' · ');
   document.querySelector('#detail-recipe-list').innerHTML = recipeNames.map(recipeName => {
-    const visual = dishVisuals[recipeName] || dishVisuals['구이'];
+    const visual = recipePhotos[`${fish.name}|${recipeName}`];
     const lockedClass = found ? '' : 'is-locked';
-    return `<article class="detail-recipe-item"><div class="detail-recipe-media"><figure><img class="${lockedClass}" src="${fish.photo}" alt="${fish.name} 실제 사진"><span>해산물</span></figure><figure><img class="${lockedClass}" src="${visual.image}" alt="${fish.name} ${recipeName} 조리법 실제 사진"><span>요리</span></figure></div><div class="detail-recipe-copy"><strong>${fish.name} ${recipeName}</strong><span class="detail-recipe-sources"><a href="${fish.source}" target="_blank" rel="noreferrer">생선 출처</a>·<a href="${visual.source}" target="_blank" rel="noreferrer">요리 출처</a></span></div></article>`;
+    return `<article class="detail-recipe-item"><img class="${lockedClass}" src="${visual.image}" alt="${fish.name} ${recipeName} 실제 완성 요리 사진"><div class="detail-recipe-copy"><strong>${fish.name} ${recipeName}</strong><a href="${visual.source}" target="_blank" rel="noreferrer">실제 요리 사진 출처</a></div></article>`;
   }).join('');
   const credit = document.querySelector('#detail-credit');
   credit.href = fish.source;
