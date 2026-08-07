@@ -183,7 +183,8 @@ function showCatalogDetail(index) {
   const recipeNames = fish.recipe.split(' · ');
   document.querySelector('#detail-recipe-list').innerHTML = recipeNames.map(recipeName => {
     const visual = dishVisuals[recipeName] || dishVisuals['구이'];
-    return `<article class="detail-recipe-item"><img class="${found ? '' : 'is-locked'}" src="${visual.image}" alt="${fish.name} 추천 요리 ${recipeName} 실제 사진"><div><strong>${recipeName}</strong><a href="${visual.source}" target="_blank" rel="noreferrer">실제 사진 출처</a></div></article>`;
+    const lockedClass = found ? '' : 'is-locked';
+    return `<article class="detail-recipe-item"><div class="detail-recipe-media"><figure><img class="${lockedClass}" src="${fish.photo}" alt="${fish.name} 실제 사진"><span>해산물</span></figure><figure><img class="${lockedClass}" src="${visual.image}" alt="${fish.name} ${recipeName} 조리법 실제 사진"><span>요리</span></figure></div><div class="detail-recipe-copy"><strong>${fish.name} ${recipeName}</strong><span class="detail-recipe-sources"><a href="${fish.source}" target="_blank" rel="noreferrer">생선 출처</a>·<a href="${visual.source}" target="_blank" rel="noreferrer">요리 출처</a></span></div></article>`;
   }).join('');
   const credit = document.querySelector('#detail-credit');
   credit.href = fish.source;
