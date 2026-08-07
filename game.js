@@ -433,6 +433,13 @@ function updateTimeOfDay(delta) {
   hemisphereLight.intensity = 0.22 + daylight * 1.08;
   waterMaterial.color.setScalar(0.3 + daylight * 0.34);
 
+  const lanternTarget = THREE.MathUtils.clamp((0.22 - altitude) / 0.35, 0, 1);
+  const lanternBlend = delta > 0 ? 1 - Math.exp(-delta * 2.2) : 1;
+  lanternLevel = THREE.MathUtils.lerp(lanternLevel, lanternTarget, lanternBlend);
+  lanternLight.intensity = lanternLevel * 2.4;
+  lanternGlassMaterial.emissiveIntensity = 0.12 + lanternLevel * 3.6;
+  lanternGlowMaterial.opacity = lanternLevel * 0.22;
+
   clockTimeEl.textContent = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
   clockIconEl.textContent = altitude > 0.18 ? '☀' : altitude > -0.08 ? '◐' : '☾';
 }
@@ -477,6 +484,106 @@ const shoreEdge = new THREE.Mesh(
 shoreEdge.position.set(0, 0.38, 4.08);
 shoreEdge.receiveShadow = true;
 scene.add(shoreEdge);
+
+const fishingGear = new THREE.Group();
+fishingGear.position.set(-4.2, 0.29, 6.4);
+fishingGear.rotation.y = 0.16;
+fishingGear.scale.setScalar(0.62);
+
+const basketMaterial = new THREE.MeshStandardMaterial({ color: 0x80603c, roughness: 0.92 });
+const basketDarkMaterial = new THREE.MeshStandardMaterial({ color: 0x4a3524, roughness: 0.95 });
+const basketFloor = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.12, 1.15), basketDarkMaterial);
+basketFloor.position.y = 0.08;
+fishingGear.add(basketFloor);
+for (let i = 0; i < 5; i++) {
+  const slatFront = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.72, 0.09), basketMaterial);
+  slatFront.position.set(-0.72 + i * 0.36, 0.43, 0.53);
+  const slatBack = slatFront.clone();
+  slatBack.position.z = -0.53;
+  fishingGear.add(slatFront, slatBack);
+}
+[-0.82, 0.82].forEach(x => {
+  const sideRail = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.72, 1.08), basketMaterial);
+  sideRail.position.set(x, 0.43, 0);
+  fishingGear.add(sideRail);
+});
+for (const y of [0.2, 0.68]) {
+  const frontRail = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.1, 0.11), basketDarkMaterial);
+  frontRail.position.set(0, y, 0.55);
+  const backRail = frontRail.clone();
+  backRail.position.z = -0.55;
+  fishingGear.add(frontRail, backRail);
+}
+
+const tackleBox = new THREE.Group();
+const tackleBase = new THREE.Mesh(new THREE.BoxGeometry(1.35, 0.48, 0.82), new THREE.MeshStandardMaterial({ color: 0x254d59, roughness: 0.68, metalness: 0.08 }));
+tackleBase.position.y = 0.25;
+const tackleLid = new THREE.Mesh(new THREE.BoxGeometry(1.42, 0.14, 0.88), new THREE.MeshStandardMaterial({ color: 0xd08332, roughness: 0.62 }));
+tackleLid.position.y = 0.56;
+const tackleHandle = new THREE.Mesh(new THREE.TorusGeometry(0.27, 0.035, 7, 18, Math.PI), new THREE.MeshStandardMaterial({ color: 0x1c292d, roughness: 0.42, metalness: 0.45 }));
+tackleHandle.position.y = 0.68;
+tackleHandle.rotation.z = Math.PI;
+tackleBox.add(tackleBase, tackleLid, tackleHandle);
+tackleBox.position.set(1.65, 0.02, -0.14);
+tackleBox.rotation.y = -0.12;
+fishingGear.add(tackleBox);
+
+const baitBucket = new THREE.Group();
+const bucketBody = new THREE.Mesh(new THREE.CylinderGeometry(0.43, 0.36, 0.72, 18), new THREE.MeshStandardMaterial({ color: 0xd6d0bd, roughness: 0.78, metalness: 0.08 }));
+bucketBody.position.y = 0.37;
+const bucketRim = new THREE.Mesh(new THREE.TorusGeometry(0.43, 0.045, 8, 20), basketDarkMaterial);
+bucketRim.rotation.x = Math.PI / 2;
+bucketRim.position.y = 0.74;
+const bucketHandle = new THREE.Mesh(new THREE.TorusGeometry(0.48, 0.028, 7, 20, Math.PI), new THREE.MeshStandardMaterial({ color: 0x555b5a, roughness: 0.5, metalness: 0.55 }));
+bucketHandle.rotation.z = Math.PI;
+bucketHandle.position.y = 0.7;
+baitBucket.add(bucketBody, bucketRim, bucketHandle);
+baitBucket.position.set(-1.45, 0, -0.12);
+fishingGear.add(baitBucket);
+fishingGear.traverse(object => { if (object.isMesh) { object.castShadow = true; object.receiveShadow = true; } });
+scene.add(fishingGear);
+
+const lantern = new THREE.Group();
+lantern.position.set(-2.15, 0.29, 6.45);
+lantern.scale.setScalar(0.68);
+const lanternMetalMaterial = new THREE.MeshStandardMaterial({ color: 0x273238, roughness: 0.38, metalness: 0.7 });
+const lanternBase = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.5, 0.24, 18), lanternMetalMaterial);
+lanternBase.position.y = 0.12;
+const lanternLower = new THREE.Mesh(new THREE.CylinderGeometry(0.29, 0.36, 0.14, 18), lanternMetalMaterial);
+lanternLower.position.y = 0.31;
+const lanternGlassMaterial = new THREE.MeshStandardMaterial({ color: 0xffd596, emissive: 0xff8f35, emissiveIntensity: 0.12, roughness: 0.14, metalness: 0.02, transparent: true, opacity: 0.7 });
+const lanternGlass = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.31, 0.72, 18), lanternGlassMaterial);
+lanternGlass.position.y = 0.72;
+const lanternCap = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.39, 0.18, 18), lanternMetalMaterial);
+lanternCap.position.y = 1.17;
+const lanternRoof = new THREE.Mesh(new THREE.ConeGeometry(0.4, 0.26, 18), lanternMetalMaterial);
+lanternRoof.position.y = 1.38;
+const lanternHandle = new THREE.Mesh(new THREE.TorusGeometry(0.48, 0.035, 8, 24, Math.PI), lanternMetalMaterial);
+lanternHandle.rotation.z = Math.PI;
+lanternHandle.position.y = 1.48;
+lantern.add(lanternBase, lanternLower, lanternGlass, lanternCap, lanternRoof, lanternHandle);
+lantern.traverse(object => { if (object.isMesh) object.castShadow = true; });
+scene.add(lantern);
+
+const lanternLight = new THREE.PointLight(0xffb45f, 0, 10, 2);
+lanternLight.position.set(-2.15, 0.95, 6.45);
+scene.add(lanternLight);
+const lanternGlowCanvas = document.createElement('canvas');
+lanternGlowCanvas.width = lanternGlowCanvas.height = 128;
+const lanternGlowContext = lanternGlowCanvas.getContext('2d');
+const lanternGradient = lanternGlowContext.createRadialGradient(64, 64, 2, 64, 64, 64);
+lanternGradient.addColorStop(0, 'rgba(255,191,100,1)');
+lanternGradient.addColorStop(0.38, 'rgba(255,166,72,.55)');
+lanternGradient.addColorStop(1, 'rgba(255,137,45,0)');
+lanternGlowContext.fillStyle = lanternGradient;
+lanternGlowContext.fillRect(0, 0, 128, 128);
+const lanternGlowTexture = new THREE.CanvasTexture(lanternGlowCanvas);
+const lanternGlowMaterial = new THREE.MeshBasicMaterial({ color: 0xffb264, map: lanternGlowTexture, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+const lanternGroundGlow = new THREE.Mesh(new THREE.PlaneGeometry(5, 5), lanternGlowMaterial);
+lanternGroundGlow.rotation.x = -Math.PI / 2;
+lanternGroundGlow.position.set(-2.15, 0.295, 6.45);
+scene.add(lanternGroundGlow);
+let lanternLevel = 0;
 
 const bollardMaterial = new THREE.MeshStandardMaterial({ color: 0x273338, roughness: 0.42, metalness: 0.58 });
 [-9.2, 9.2].forEach(x => {
