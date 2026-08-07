@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>낚아무라</title>
-  <link rel="stylesheet" href="style.css?v=11" />
+  <link rel="stylesheet" href="style.css?v=12" />
 </head>
 <body>
   <canvas id="game"></canvas>
@@ -63,7 +63,7 @@
       </div>
       <article id="collection-detail" class="collection-detail" hidden>
         <div class="detail-photo-frame"><img id="detail-photo" alt=""><a id="detail-credit" target="_blank" rel="noreferrer">사진 출처</a></div>
-        <div class="detail-copy"><div class="detail-top"><span id="detail-number">No.001</span><span id="detail-rarity">일반</span></div><h3 id="detail-name"></h3><p id="detail-meta"></p><p id="detail-trait"></p><strong id="detail-season"></strong><p id="detail-recipe"></p><button id="detail-close" type="button">상세 닫기</button></div>
+        <div class="detail-copy"><div class="detail-top"><span id="detail-number">No.001</span><span id="detail-rarity">일반</span></div><h3 id="detail-name"></h3><p id="detail-meta"></p><p id="detail-trait"></p><strong id="detail-season"></strong><div class="detail-recipe-card"><img id="detail-recipe-photo" alt=""><div><small>추천 요리</small><p id="detail-recipe"></p><a id="detail-recipe-credit" target="_blank" rel="noreferrer">실제 요리 사진 출처</a></div></div><button id="detail-close" type="button">상세 닫기</button></div>
       </article>
       <div id="collection-grid" class="collection-grid"></div>
       <div class="dex-footer"><button id="collection-back" class="back-button" type="button">← 뒤로가기</button><div class="pagination"><button id="page-prev" type="button">이전</button><span id="page-label">1 / 6</span><button id="page-next" type="button">다음</button></div></div>
@@ -81,6 +81,6 @@
   </section>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="catalog-data.js?v=1"></script>
-  <script src="game.js?v=32"></script>
+  <script src="game.js?v=33"></script>
 </body>
 </html>
