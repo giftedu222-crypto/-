@@ -22,13 +22,27 @@ const seasonListEl = document.querySelector('#season-list');
 const seasonToggleEl = document.querySelector('#season-toggle');
 const collectionBackButton = document.querySelector('#collection-back');
 const collectionBackAnchor = document.querySelector('#collection-back-anchor');
+const collectionCard = document.querySelector('#collection .collection-card');
+
+function positionFloatingCollectionBack() {
+  const cardRect = collectionCard.getBoundingClientRect();
+  if (!cardRect.width) return;
+  const cardStyle = getComputedStyle(collectionCard);
+  const left = cardRect.left + parseFloat(cardStyle.borderLeftWidth) + parseFloat(cardStyle.paddingLeft);
+  const bottom = innerHeight - cardRect.bottom + parseFloat(cardStyle.borderBottomWidth) + parseFloat(cardStyle.paddingBottom);
+  collectionBackButton.style.setProperty('--collection-back-left', `${left}px`);
+  collectionBackButton.style.setProperty('--collection-back-bottom', `${bottom}px`);
+}
 
 new IntersectionObserver(entries => {
+  positionFloatingCollectionBack();
   collectionBackButton.classList.toggle('is-floating', !entries[0].isIntersecting);
 }, {
-  root: document.querySelector('#collection .collection-card'),
+  root: collectionCard,
   threshold: 0.2
 }).observe(collectionBackAnchor);
+
+window.addEventListener('resize', positionFloatingCollectionBack);
 
 const fishCatalog = window.SEAFOOD_CATALOG || [];
 const recipePhotos = window.RECIPE_PHOTOS || {};
@@ -960,6 +974,7 @@ document.querySelector('#open-collection').addEventListener('click', () => {
   renderCollection();
   startScreen.style.display = 'none';
   collectionScreen.style.display = 'flex';
+  requestAnimationFrame(positionFloatingCollectionBack);
 });
 
 document.querySelector('#collection-back').addEventListener('click', () => {
@@ -994,6 +1009,7 @@ document.querySelector('#caught-open-dex').addEventListener('click', event => {
   catchInfo.style.display = 'none';
   renderCollection();
   collectionScreen.style.display = 'flex';
+  requestAnimationFrame(positionFloatingCollectionBack);
   showCatalogDetail(index);
 });
 
