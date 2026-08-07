@@ -754,8 +754,8 @@ function createPlaceLabel(title, subtitle) {
 
 // AMNAM PARK / SONGDO: pine cliffs, cable cars, rocky coves and the Songdo skyline.
 const amnam = placeScenery.amnam;
-addRidge(amnam, 155, 19, 0x315d52, [0, 0, -102], 0.4);
-addRidge(amnam, 122, 14, 0x244c46, [-27, 0, -82], 1.9);
+addRidge(amnam, 104, 18, 0x315d52, [-42, 0, -110], 0.4);
+addRidge(amnam, 78, 12, 0x294d47, [50, 0, -118], 1.9);
 for (let i = 0; i < 7; i++) {
   const cliff = new THREE.Mesh(new THREE.IcosahedronGeometry(5 + (i % 3) * 1.3, 2), coastalMaterial(i % 2 ? 0x314641 : 0x263b39, 0.98));
   cliff.position.set(-32 + i * 4.2, 3.2 + (i % 2), -38 - i * 2.5);
@@ -768,15 +768,29 @@ for (let i = 0; i < 7; i++) {
     amnam.add(pine);
   }
 }
-const towerA = createCableTower(10.5);
-towerA.position.set(-19, 6.7, -34);
-const towerB = createCableTower(12.5);
-towerB.position.set(22, 7.8, -54);
+const towerA = createCableTower(8.4);
+towerA.position.set(-19, 8.7, -42);
+
+const songdoStation = new THREE.Group();
+const stationBase = new THREE.Mesh(new THREE.BoxGeometry(15, 1.35, 8.5), coastalMaterial(0x657174, 0.78, 0.12));
+stationBase.position.y = 0.68;
+const stationHall = new THREE.Mesh(new THREE.BoxGeometry(10.8, 3.25, 6.4), coastalMaterial(0xd5d5c9, 0.62, 0.06));
+stationHall.position.y = 2.28;
+const stationGlass = new THREE.Mesh(new THREE.PlaneGeometry(7.4, 1.65), new THREE.MeshStandardMaterial({ color: 0x5d98aa, roughness: 0.13, metalness: 0.28, transparent: true, opacity: 0.82 }));
+stationGlass.position.set(0, 2.5, 3.21);
+const stationRoof = new THREE.Mesh(new THREE.BoxGeometry(12.2, 0.3, 7.2), coastalMaterial(0x354247, 0.5, 0.42));
+stationRoof.position.y = 4.02;
+songdoStation.add(stationBase, stationHall, stationGlass, stationRoof);
+songdoStation.position.set(24, 0, -57);
+amnam.add(songdoStation);
+
+const towerB = createCableTower(9.2);
+towerB.position.set(23, 4.12, -57);
 amnam.add(towerA, towerB);
-const cableStart = new THREE.Vector3(-21, 17.4, -34);
-const cableEnd = new THREE.Vector3(24, 20.5, -54);
-const outboundCable = createSuspendedCable(amnam, cableStart, cableEnd, 2.15, -0.42);
-const inboundCable = createSuspendedCable(amnam, cableStart.clone().add(new THREE.Vector3(0, -0.24, 0)), cableEnd.clone().add(new THREE.Vector3(0, -0.24, 0)), 2.15, 0.42);
+const cableStart = new THREE.Vector3(-20.2, 17.35, -42);
+const cableEnd = new THREE.Vector3(24.2, 13.45, -57);
+const outboundCable = createSuspendedCable(amnam, cableStart, cableEnd, 1.65, -0.42);
+const inboundCable = createSuspendedCable(amnam, cableStart.clone().add(new THREE.Vector3(0, -0.24, 0)), cableEnd.clone().add(new THREE.Vector3(0, -0.24, 0)), 1.65, 0.42);
 const cableCars = [];
 for (let i = 0; i < 4; i++) {
   const gondola = createGondola(i % 2 ? 0xf2aa32 : 0xc9473c);
@@ -787,12 +801,13 @@ for (let i = 0; i < 4; i++) {
   amnam.add(gondola);
 }
 for (let i = 0; i < 8; i++) {
-  const building = createBuilding(2.6 + (i % 3) * 0.55, 7 + (i % 4) * 2.5, 2.5, i % 2 ? 0xc4c0aa : 0x879ca1);
-  building.position.set(24 + i * 3.4, 0, -66 - (i % 2) * 3);
+  const building = createBuilding(2.5 + (i % 3) * 0.5, 6.5 + (i % 4) * 2.25, 2.4, i % 2 ? 0xb9b8aa : 0x819499);
+  building.position.set(38 + i * 3.3, 0, -78 - (i % 3) * 3.5);
+  building.scale.setScalar(0.88);
   amnam.add(building);
 }
 const amnamLabel = createPlaceLabel('송도 · 암남공원', 'BUSAN COAST FISHING');
-amnamLabel.position.set(25, 14, -60);
+amnamLabel.position.set(35, 9.6, -69);
 amnam.add(amnamLabel);
 
 // YEONGDO: Busan Port bridge, working harbor, cranes, breakwater and red lighthouse.
