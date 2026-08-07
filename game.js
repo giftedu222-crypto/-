@@ -324,7 +324,7 @@ function showCatchInformation(fish, isNew, count, isPolluted = false) {
   document.querySelector('#caught-description').textContent = isPolluted
     ? `바다 쓰레기에 오염된 ${fish.name}입니다. 깨끗한 바다와 해양 생물을 위해 쓰레기를 줄이고 환경을 보호해 주세요.`
     : fish.trait;
-  document.querySelector('#caught-recipe').textContent = fish.isTrash ? '추천 요리 없음' : isPolluted ? '섭취 주의 · 바다로 버리지 않기' : fish.recipe;
+  document.querySelector('#caught-recipe').textContent = fish.isTrash ? '바다에 쓰레기를 버릴 건가요?' : isPolluted ? '섭취 주의 · 바다로 버리지 않기' : fish.recipe;
   document.querySelector('#caught-season').textContent = fish.isTrash ? '해당 없음' : fish.season;
   document.querySelector('#caught-state').textContent = fish.isTrash ? '도감에 등록되지 않음' : isPolluted ? `환경오염 개체 · 원래 종 ${count}회` : isNew ? '새로 발견!' : `중복 획득 · 총 ${count}회`;
   const caughtDexButton = document.querySelector('#caught-open-dex');
