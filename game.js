@@ -435,9 +435,9 @@ function updateTimeOfDay(delta) {
   scene.fog.color.copy(fogColor);
 
   const sunHorizontalRadius = selectedFishingPlace.id === 'dadaepo' ? 38 : 105;
-  const sunHeight = selectedFishingPlace.id === 'dadaepo' ? Math.max(altitude * 72, 15) : altitude * 72;
+  const sunHeight = altitude * 72 + (selectedFishingPlace.id === 'dadaepo' ? 12 : 0);
   sun.position.set(Math.cos(solarAngle) * sunHorizontalRadius, sunHeight, -145);
-  sun.visible = altitude > -0.08;
+  sun.visible = altitude > (selectedFishingPlace.id === 'dadaepo' ? -0.17 : -0.08);
   moon.position.set(-Math.cos(solarAngle) * 100, -altitude * 62, -150);
   moon.visible = altitude < 0.12;
   starMaterial.opacity = THREE.MathUtils.clamp((-altitude + 0.02) / 0.42, 0, 0.92);
@@ -450,9 +450,10 @@ function updateTimeOfDay(delta) {
   const lanternBlend = delta > 0 ? 1 - Math.exp(-delta * 2.2) : 1;
   lanternLevel = THREE.MathUtils.lerp(lanternLevel, lanternTarget, lanternBlend);
   lanternLight.intensity = lanternLevel * 2.25;
-  lanternGlassMaterial.emissiveIntensity = 0.06 + lanternLevel * 0.7;
-  lanternCoreMaterial.opacity = 0.04 + lanternLevel * 0.96;
-  lanternFlameMaterial.opacity = 0.04 + lanternLevel * 0.96;
+  lanternGlassMaterial.emissiveIntensity = lanternLevel * 0.38;
+  lanternBulbMaterial.color.copy(lanternBulbOffColor).lerp(lanternBulbOnColor, lanternLevel);
+  lanternBulbMaterial.emissiveIntensity = lanternLevel * 4.2;
+  lanternCoreMaterial.opacity = lanternLevel * 0.76;
   lanternHaloMaterial.opacity = lanternLevel * 0.32;
   lanternGlowMaterial.opacity = lanternLevel * 0.22;
 
@@ -582,12 +583,22 @@ lanternLower.position.y = 0.31;
 const lanternGlassMaterial = new THREE.MeshStandardMaterial({ color: 0xffd596, emissive: 0xff8f35, emissiveIntensity: 0.06, roughness: 0.14, metalness: 0.02, transparent: true, opacity: 0.42 });
 const lanternGlass = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.31, 0.72, 18), lanternGlassMaterial);
 lanternGlass.position.y = 0.72;
+const lanternBulbOffColor = new THREE.Color(0xd9ddd5);
+const lanternBulbOnColor = new THREE.Color(0xfff1bd);
+const lanternBulbMaterial = new THREE.MeshStandardMaterial({ color: lanternBulbOffColor, emissive: 0xffa94f, emissiveIntensity: 0, roughness: 0.22, metalness: 0, transparent: true, opacity: 0.94 });
+const lanternBulb = new THREE.Group();
+const lanternBulbTube = new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.068, 0.4, 16), lanternBulbMaterial);
+lanternBulbTube.position.y = 0.72;
+const lanternBulbBottom = new THREE.Mesh(new THREE.SphereGeometry(0.069, 16, 10), lanternBulbMaterial);
+lanternBulbBottom.position.y = 0.52;
+const lanternBulbTop = lanternBulbBottom.clone();
+lanternBulbTop.position.y = 0.92;
+const lanternBulbSocket = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.11, 0.1, 14), lanternMetalMaterial);
+lanternBulbSocket.position.y = 0.46;
+lanternBulb.add(lanternBulbTube, lanternBulbBottom, lanternBulbTop, lanternBulbSocket);
 const lanternCoreMaterial = new THREE.MeshBasicMaterial({ color: 0xfff0a8, transparent: true, opacity: 0.04, depthWrite: false, blending: THREE.AdditiveBlending });
-const lanternCore = new THREE.Mesh(new THREE.SphereGeometry(0.085, 16, 12), lanternCoreMaterial);
-lanternCore.position.y = 0.62;
-const lanternFlameMaterial = new THREE.MeshBasicMaterial({ color: 0xff7d20, transparent: true, opacity: 0.04, depthWrite: false, blending: THREE.AdditiveBlending });
-const lanternFlame = new THREE.Mesh(new THREE.ConeGeometry(0.115, 0.34, 14), lanternFlameMaterial);
-lanternFlame.position.y = 0.76;
+const lanternCore = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 12), lanternCoreMaterial);
+lanternCore.position.y = 0.72;
 const lanternHaloMaterial = new THREE.MeshBasicMaterial({ color: 0xffb347, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
 const lanternHalo = new THREE.Mesh(new THREE.SphereGeometry(0.235, 18, 12), lanternHaloMaterial);
 lanternHalo.position.y = 0.71;
@@ -598,7 +609,7 @@ lanternRoof.position.y = 1.38;
 const lanternHandle = new THREE.Mesh(new THREE.TorusGeometry(0.48, 0.035, 8, 24, Math.PI), lanternMetalMaterial);
 lanternHandle.rotation.z = Math.PI;
 lanternHandle.position.y = 1.48;
-lantern.add(lanternBase, lanternLower, lanternGlass, lanternHalo, lanternFlame, lanternCore, lanternCap, lanternRoof, lanternHandle);
+lantern.add(lanternBase, lanternLower, lanternGlass, lanternHalo, lanternBulb, lanternCore, lanternCap, lanternRoof, lanternHandle);
 lantern.traverse(object => { if (object.isMesh) object.castShadow = true; });
 scene.add(lantern);
 
@@ -1820,8 +1831,8 @@ function loop(time) {
   previousFrameTime = time;
   const seconds = time * 0.001;
   updateTimeOfDay(frameDelta);
-  const lanternFlicker = 0.95 + Math.sin(seconds * 7.1) * 0.035 + Math.sin(seconds * 13.7) * 0.015;
-  lanternFlame.scale.set(1, lanternFlicker, 1);
+  const lanternFlicker = 0.985 + Math.sin(seconds * 7.1) * 0.012 + Math.sin(seconds * 13.7) * 0.006;
+  lanternCore.scale.setScalar(lanternFlicker);
   lanternLight.intensity *= lanternFlicker;
   clouds.children.forEach((cloud, index) => {
     cloud.position.x += frameDelta * cloud.userData.speed;
