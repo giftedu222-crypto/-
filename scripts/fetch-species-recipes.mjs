@@ -22,6 +22,41 @@ const verifiedRecipeOverrides = {
     thumbnail: 'https://api.openverse.org/v1/images/04ceeb21-91d2-47b3-9e60-4dac31ddd37e/thumb/',
     source: 'https://www.flickr.com/photos/10559879@N00/6079010037',
     title: 'Fried Spanish Mackerel Cutlets'
+  },
+  '\uc0bc\uce58|\ubb34\uc870\ub9bc': {
+    thumbnail: 'https://api.openverse.org/v1/images/c76c751e-5370-4198-aa26-9577959de68d/thumb/',
+    source: 'https://www.flickr.com/photos/10559879@N00/9552799469',
+    title: 'Simmered Spanish mackerel'
+  },
+  '\uccad\uc5b4|\uc18c\uae08\uad6c\uc774': {
+    thumbnail: 'https://api.openverse.org/v1/images/5f43860b-4806-4f72-b026-7af17608fa4d/thumb/',
+    source: 'https://www.flickr.com/photos/48600074651@N01/13438922104',
+    title: 'Grilled herring set'
+  },
+  '\ubc40\uc7a5\uc5b4|\ub36e\ubc25': {
+    thumbnail: 'https://api.openverse.org/v1/images/dff1b0b9-1f3c-4818-a149-a7b1b7e9f59b/thumb/',
+    source: 'https://www.flickr.com/photos/94862897@N00/5045430050',
+    title: 'Grilled eel rice bowl (unadon)'
+  },
+  '\ucc38\ub3d4|\ub9d1\uc740\ud0d5': {
+    thumbnail: 'https://api.openverse.org/v1/images/78d8673b-4e6a-4581-86cf-868eb9a59055/thumb/',
+    source: 'https://www.flickr.com/photos/98032164@N00/3122808005',
+    title: 'Sea bream soup'
+  },
+  '\ub18d\uc5b4|\ub9d1\uc740\ud0d5': {
+    thumbnail: 'https://api.openverse.org/v1/images/2a164771-3c15-4bdf-b95e-9d48ab4481ca/thumb/',
+    source: 'https://www.flickr.com/photos/41138825@N00/4455801611',
+    title: 'Sea bass soup'
+  },
+  '\uc870\uae30|\uc870\ub9bc': {
+    thumbnail: 'https://api.openverse.org/v1/images/e9ade45b-0df6-4e47-bc8c-0ab52a261bb1/thumb/',
+    source: 'https://www.flickr.com/photos/25802865@N08/50395307428',
+    title: 'Stewed Yellow Croaker'
+  },
+  '\ud0b9\ud06c\ub7a9|\ud574\ubb3c\ud0d5': {
+    thumbnail: 'https://api.openverse.org/v1/images/022448c2-9b57-490f-8690-4a3a09fb831e/thumb/',
+    source: 'https://www.flickr.com/photos/32400437@N07/39432899514',
+    title: 'King Crab Soup'
   }
 };
 const speciesTerms = {
@@ -29,6 +64,27 @@ const speciesTerms = {
 };
 
 const foodWords = ['food','dish','grill','grilled','fried','fry','soup','stew','sashimi','sushi','rice','cooked','braised','steamed','roast','cuisine','meal','restaurant','recipe','pancake','donburi'];
+const methodAliases = {
+  'salt grilled': ['grill', 'grilled', 'roast', 'roasted'],
+  'braised radish': ['brais', 'stew', 'simmer', 'radish', 'daikon'],
+  'fried': ['fried', 'fry', 'tempura', 'cutlet'],
+  'stir fried': ['stir', 'fried', 'saute'],
+  'grilled': ['grill', 'grilled', 'roast', 'roasted'],
+  'braised': ['brais', 'stew', 'simmer'],
+  'sashimi': ['sashimi', 'raw', 'sushi', 'carpaccio'],
+  'clear soup': ['soup', 'broth', 'stew', 'hotpot'],
+  'steamed': ['steam', 'boil'],
+  'pancake': ['pancake', 'fritter'],
+  'charcoal grilled': ['grill', 'grilled', 'charcoal', 'barbecue', 'bbq'],
+  'rice bowl': ['rice', 'bowl', 'donburi'],
+  'blanched boiled': ['blanch', 'boil', 'poach'],
+  'seafood stew': ['stew', 'soup', 'hotpot'],
+  'sea urchin rice bowl': ['urchin', 'rice', 'bowl', 'donburi'],
+  'bibimbap': ['bibimbap', 'mixed rice', 'rice bowl'],
+  'sushi': ['sushi', 'nigiri'],
+  'sea cucumber soup': ['cucumber', 'soup', 'stew'],
+  'soybean paste stew': ['soybean', 'miso', 'stew', 'soup']
+};
 const dishTerms = {
   '소금구이':'salt grilled','무조림':'braised radish','튀김':'fried','볶음':'stir fried','구이':'grilled','조림':'braised','회':'sashimi','맑은탕':'clear soup','찜':'steamed','전':'pancake','숯불구이':'charcoal grilled','덮밥':'rice bowl','숙회':'blanched boiled','해물탕':'seafood stew','성게알밥':'sea urchin rice bowl','비빔밥':'bibimbap','초밥':'sushi','해삼탕':'sea cucumber soup','된장찌개':'soybean paste stew'
 };
@@ -136,18 +192,25 @@ async function searchImages(term) {
 }
 
 async function searchExactRecipe(term, recipeName) {
-  const query = `${term} ${dishTerms[recipeName]} dish`;
-  const url = `https://api.openverse.org/v1/images/?q=${encodeURIComponent(query)}&page_size=20`;
-  const response = await fetchWithRetry(url);
-  const data = await response.json();
+  const method = dishTerms[recipeName];
   const generic = new Set(['fish','seafood','food','dish']);
   const speciesTokens = term.toLowerCase().split(/\s+/).filter(token => token.length > 2 && !generic.has(token));
-  const methodTokens = dishTerms[recipeName].toLowerCase().split(/\s+/).filter(token => token.length > 2);
-  return (data.results || []).filter(item => {
-    if (!item.thumbnail || !item.foreign_landing_url) return false;
-    const title = (item.title || '').toLowerCase();
-    return speciesTokens.some(token => title.includes(token)) && methodTokens.some(token => title.includes(token));
-  });
+  const methodTokens = methodAliases[method] || method.toLowerCase().split(/\s+/).filter(token => token.length > 2);
+  const queryMethods = [...new Set([method, ...methodTokens])];
+  for (const queryMethod of queryMethods) {
+    const query = `${term} ${queryMethod} food`;
+    const url = `https://api.openverse.org/v1/images/?q=${encodeURIComponent(query)}&page_size=20`;
+    const response = await fetchWithRetry(url);
+    const data = await response.json();
+    const matches = (data.results || []).filter(item => {
+      if (!item.thumbnail || !item.foreign_landing_url) return false;
+      const title = (item.title || '').toLowerCase();
+      return speciesTokens.some(token => title.includes(token)) && methodTokens.some(token => title.includes(token));
+    });
+    if (matches.length) return matches;
+    await sleep(80);
+  }
+  return [];
 }
 
 async function applyVerifiedRecipeOverrides() {
@@ -172,6 +235,25 @@ async function applyVerifiedRecipeOverrides() {
   }
   await fs.writeFile('recipe-photo-data.js', `window.RECIPE_PHOTOS=${JSON.stringify(updated)};\n`);
   console.log(`Applied ${Object.keys(verifiedRecipeOverrides).length} manually verified recipe photos.`);
+}
+
+function auditExistingPhotos() {
+  const results = [];
+  for (const fish of catalog) {
+    for (const recipeName of fish.recipe.split(' · ')) {
+      const key = `${fish.name}|${recipeName}`;
+      const photo = previousPhotos[key];
+      const title = (photo?.title || '').toLowerCase();
+      const generic = new Set(['fish', 'seafood', 'food', 'dish']);
+      const speciesTokens = speciesTerms[fish.name].toLowerCase().split(/\s+/).filter(token => token.length > 2 && !generic.has(token));
+      const method = dishTerms[recipeName];
+      const methodTokens = methodAliases[method] || method.toLowerCase().split(/\s+/);
+      const speciesMatch = speciesTokens.some(token => title.includes(token));
+      const methodMatch = methodTokens.some(token => title.includes(token));
+      if (!speciesMatch || !methodMatch) results.push({ key, title: photo?.title || '', speciesMatch, methodMatch, source: photo?.source || '' });
+    }
+  }
+  console.log(JSON.stringify({ total: catalog.length * 3, suspicious: results.length, results }, null, 2));
 }
 
 async function refineExistingPhotos() {
@@ -216,6 +298,11 @@ async function refineExistingPhotos() {
 
 if (process.argv.includes('--refine')) {
   await refineExistingPhotos();
+  process.exit(0);
+}
+
+if (process.argv.includes('--audit')) {
+  auditExistingPhotos();
   process.exit(0);
 }
 
