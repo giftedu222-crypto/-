@@ -118,7 +118,56 @@ function setSeasonWidgetCollapsed(collapsed) {
   seasonToggleEl.textContent = collapsed ? '+' : '−';
   seasonToggleEl.setAttribute('aria-expanded', String(!collapsed));
   seasonToggleEl.setAttribute('aria-label', collapsed ? '제철 목록 펼치기' : '제철 목록 접기');
+  requestAnimationFrame(constrainSeasonWidgetPosition);
 }
+
+const seasonWidgetHeaderEl = seasonWidgetEl.querySelector('header');
+let seasonWidgetDrag = null;
+
+function setSeasonWidgetPosition(left, top) {
+  const edge = 8;
+  const maxLeft = Math.max(edge, innerWidth - seasonWidgetEl.offsetWidth - edge);
+  const maxTop = Math.max(edge, innerHeight - seasonWidgetEl.offsetHeight - edge);
+  seasonWidgetEl.style.left = `${THREE.MathUtils.clamp(left, edge, maxLeft)}px`;
+  seasonWidgetEl.style.top = `${THREE.MathUtils.clamp(top, edge, maxTop)}px`;
+  seasonWidgetEl.style.right = 'auto';
+}
+
+function constrainSeasonWidgetPosition() {
+  if (!seasonWidgetEl.style.left) return;
+  const rect = seasonWidgetEl.getBoundingClientRect();
+  setSeasonWidgetPosition(rect.left, rect.top);
+}
+
+function saveSeasonWidgetPosition() {
+  if (!seasonWidgetEl.style.left) return;
+  const rect = seasonWidgetEl.getBoundingClientRect();
+  try { localStorage.setItem('season-widget-position-v1', JSON.stringify({ left: rect.left, top: rect.top })); } catch {}
+}
+
+seasonWidgetHeaderEl.addEventListener('pointerdown', event => {
+  if (event.button !== 0 || event.target.closest('button')) return;
+  const rect = seasonWidgetEl.getBoundingClientRect();
+  seasonWidgetDrag = { pointerId: event.pointerId, offsetX: event.clientX - rect.left, offsetY: event.clientY - rect.top };
+  try { seasonWidgetHeaderEl.setPointerCapture(event.pointerId); } catch {}
+  seasonWidgetEl.classList.add('is-dragging');
+  event.preventDefault();
+});
+
+seasonWidgetHeaderEl.addEventListener('pointermove', event => {
+  if (!seasonWidgetDrag || seasonWidgetDrag.pointerId !== event.pointerId) return;
+  setSeasonWidgetPosition(event.clientX - seasonWidgetDrag.offsetX, event.clientY - seasonWidgetDrag.offsetY);
+});
+
+function finishSeasonWidgetDrag(event) {
+  if (!seasonWidgetDrag || seasonWidgetDrag.pointerId !== event.pointerId) return;
+  seasonWidgetDrag = null;
+  seasonWidgetEl.classList.remove('is-dragging');
+  saveSeasonWidgetPosition();
+}
+
+seasonWidgetHeaderEl.addEventListener('pointerup', finishSeasonWidgetDrag);
+seasonWidgetHeaderEl.addEventListener('pointercancel', finishSeasonWidgetDrag);
 
 seasonToggleEl.addEventListener('click', () => {
   const collapsed = !seasonWidgetEl.classList.contains('collapsed');
@@ -137,6 +186,13 @@ seasonNextEl.addEventListener('click', () => {
 });
 
 try { setSeasonWidgetCollapsed(localStorage.getItem('season-widget-collapsed-v1') === '1'); } catch { setSeasonWidgetCollapsed(false); }
+try {
+  const savedSeasonWidgetPosition = JSON.parse(localStorage.getItem('season-widget-position-v1') || 'null');
+  if (Number.isFinite(savedSeasonWidgetPosition?.left) && Number.isFinite(savedSeasonWidgetPosition?.top)) {
+    setSeasonWidgetPosition(savedSeasonWidgetPosition.left, savedSeasonWidgetPosition.top);
+  }
+} catch {}
+window.addEventListener('resize', constrainSeasonWidgetPosition);
 
 let discoveredFish = new Set();
 let catchCounts = {};
