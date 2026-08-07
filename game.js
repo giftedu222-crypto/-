@@ -564,29 +564,80 @@ function addLine(group, from, to, color = 0x252b2d, opacity = 1) {
 
 function createCableTower(height = 9) {
   const tower = new THREE.Group();
-  const steel = coastalMaterial(0x56646a, 0.48, 0.55);
-  [-0.8, 0.8].forEach(x => {
-    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.18, height, 8), steel);
+  const steel = coastalMaterial(0x59666b, 0.42, 0.62);
+  const concrete = coastalMaterial(0x6e7778, 0.94, 0.04);
+  [-0.95, 0.95].forEach(x => {
+    const footing = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.55, 1.25), concrete);
+    footing.position.set(x, 0.28, 0);
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.24, height, 10), steel);
     leg.position.set(x, height / 2, 0);
-    leg.rotation.z = x * -0.035;
-    tower.add(leg);
+    leg.rotation.z = x * -0.025;
+    tower.add(footing, leg);
   });
-  const beam = new THREE.Mesh(new THREE.BoxGeometry(3.3, 0.22, 0.3), steel);
+  const beam = new THREE.Mesh(new THREE.BoxGeometry(4.1, 0.28, 0.42), steel);
   beam.position.y = height;
   tower.add(beam);
-  for (let y = 2; y < height; y += 2.1) addLine(tower, new THREE.Vector3(-0.7, y, 0), new THREE.Vector3(0.7, y + 1.2, 0), 0x465157);
+  for (let y = 1.5; y < height - 1; y += 2) {
+    addLine(tower, new THREE.Vector3(-0.84, y, 0.04), new THREE.Vector3(0.84, y + 1.15, 0.04), 0x3e494e);
+    addLine(tower, new THREE.Vector3(0.84, y, 0.04), new THREE.Vector3(-0.84, y + 1.15, 0.04), 0x3e494e);
+  }
+  [-1.25, 1.25].forEach(x => {
+    const pulley = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.065, 8, 18), coastalMaterial(0x283237, 0.34, 0.72));
+    pulley.position.set(x, height + 0.12, 0.28);
+    tower.add(pulley);
+  });
   return tower;
 }
 
 function createGondola(color) {
   const gondola = new THREE.Group();
-  const body = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.9, 1), coastalMaterial(color, 0.42, 0.08));
-  const glass = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.48, 1.02), new THREE.MeshStandardMaterial({ color: 0x83b8c8, roughness: 0.16, metalness: 0.35, transparent: true, opacity: 0.78 }));
-  glass.position.y = 0.17;
-  const hanger = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.65, 7), coastalMaterial(0x232a2d, 0.5, 0.6));
-  hanger.position.y = 0.76;
-  gondola.add(body, glass, hanger);
+  const cabinShape = new THREE.Shape();
+  cabinShape.moveTo(-0.78, -0.36);
+  cabinShape.lineTo(-0.68, 0.34);
+  cabinShape.quadraticCurveTo(-0.62, 0.52, -0.42, 0.57);
+  cabinShape.lineTo(0.42, 0.57);
+  cabinShape.quadraticCurveTo(0.62, 0.52, 0.68, 0.34);
+  cabinShape.lineTo(0.78, -0.36);
+  cabinShape.quadraticCurveTo(0.72, -0.55, 0.5, -0.58);
+  cabinShape.lineTo(-0.5, -0.58);
+  cabinShape.quadraticCurveTo(-0.72, -0.55, -0.78, -0.36);
+  const bodyGeometry = new THREE.ExtrudeGeometry(cabinShape, { depth: 0.92, bevelEnabled: true, bevelSize: 0.06, bevelThickness: 0.06, bevelSegments: 2 });
+  bodyGeometry.translate(0, 0, -0.46);
+  const body = new THREE.Mesh(bodyGeometry, coastalMaterial(color, 0.38, 0.12));
+  body.position.y = -1.15;
+  const glassMaterial = new THREE.MeshStandardMaterial({ color: 0x5f98aa, emissive: 0x0b2933, emissiveIntensity: 0.22, roughness: 0.12, metalness: 0.3, transparent: true, opacity: 0.88 });
+  const frontGlass = new THREE.Mesh(new THREE.PlaneGeometry(1.08, 0.54), glassMaterial);
+  frontGlass.position.set(0, -1.04, 0.526);
+  const rearGlass = frontGlass.clone();
+  rearGlass.position.z = -0.526;
+  rearGlass.rotation.y = Math.PI;
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(1.34, 0.1, 1.02), coastalMaterial(0x273337, 0.4, 0.5));
+  roof.position.y = -0.54;
+  const hanger = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.62, 9), coastalMaterial(0x232a2d, 0.4, 0.68));
+  hanger.position.y = -0.25;
+  const clamp = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.04, 7, 16), coastalMaterial(0x20292d, 0.35, 0.72));
+  clamp.rotation.y = Math.PI / 2;
+  clamp.position.y = 0.03;
+  gondola.add(body, frontGlass, rearGlass, roof, hanger, clamp);
   return gondola;
+}
+
+function createSuspendedCable(group, start, end, sag, zOffset = 0) {
+  const points = [];
+  for (let i = 0; i <= 8; i++) {
+    const t = i / 8;
+    const point = start.clone().lerp(end, t);
+    point.y -= Math.sin(Math.PI * t) * sag;
+    point.z += zOffset;
+    points.push(point);
+  }
+  const curve = new THREE.CatmullRomCurve3(points);
+  const cable = new THREE.Mesh(
+    new THREE.TubeGeometry(curve, 80, 0.035, 6, false),
+    coastalMaterial(0x202a2e, 0.34, 0.72)
+  );
+  group.add(cable);
+  return curve;
 }
 
 function createBuilding(width, height, depth, color, windowColor = 0x9ccad2) {
@@ -724,12 +775,15 @@ towerB.position.set(22, 7.8, -54);
 amnam.add(towerA, towerB);
 const cableStart = new THREE.Vector3(-21, 17.4, -34);
 const cableEnd = new THREE.Vector3(24, 20.5, -54);
-addLine(amnam, cableStart, cableEnd, 0x172126);
-addLine(amnam, cableStart.clone().add(new THREE.Vector3(0, -0.32, 0.58)), cableEnd.clone().add(new THREE.Vector3(0, -0.32, 0.58)), 0x172126);
+const outboundCable = createSuspendedCable(amnam, cableStart, cableEnd, 2.15, -0.42);
+const inboundCable = createSuspendedCable(amnam, cableStart.clone().add(new THREE.Vector3(0, -0.24, 0)), cableEnd.clone().add(new THREE.Vector3(0, -0.24, 0)), 2.15, 0.42);
+const cableCars = [];
 for (let i = 0; i < 4; i++) {
   const gondola = createGondola(i % 2 ? 0xf2aa32 : 0xc9473c);
-  gondola.position.lerpVectors(cableStart, cableEnd, 0.14 + i * 0.23);
-  gondola.position.y -= 1.05;
+  gondola.userData.cableCurve = i % 2 ? inboundCable : outboundCable;
+  gondola.userData.phase = 0.08 + i * 0.47;
+  gondola.userData.direction = i % 2 ? -1 : 1;
+  cableCars.push(gondola);
   amnam.add(gondola);
 }
 for (let i = 0; i < 8; i++) {
@@ -1453,6 +1507,16 @@ function loop(time) {
     bird.position.x += frameDelta * (0.34 + index * 0.015);
     bird.position.y += Math.sin(seconds * 0.8 + index) * frameDelta * 0.08;
     if (bird.position.x > 50) bird.position.x = -48;
+  });
+  cableCars.forEach((gondola, index) => {
+    const rawTravel = ((gondola.userData.phase + seconds * 0.018 * gondola.userData.direction) % 2 + 2) % 2;
+    const travel = rawTravel <= 1 ? rawTravel : 2 - rawTravel;
+    const curve = gondola.userData.cableCurve;
+    const point = curve.getPointAt(travel);
+    const tangent = curve.getTangentAt(travel).normalize();
+    gondola.position.copy(point);
+    gondola.rotation.y = -Math.atan2(tangent.z, tangent.x);
+    gondola.rotation.z = Math.sin(seconds * 0.55 + index) * 0.012;
   });
 
   const positions = waterGeometry.attributes.position;
