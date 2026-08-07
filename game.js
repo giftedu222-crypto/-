@@ -12,6 +12,10 @@ const currentPlaceEl = document.querySelector('#current-place');
 const gameClockEl = document.querySelector('#game-clock');
 const clockIconEl = document.querySelector('#clock-icon');
 const clockTimeEl = document.querySelector('#clock-time');
+const catchRatesToggleEl = document.querySelector('#catch-rates-toggle');
+const catchRatesPanelEl = document.querySelector('#catch-rates-panel');
+const catchRatesTitleEl = document.querySelector('#catch-rates-title');
+const catchRatesListEl = document.querySelector('#catch-rates-list');
 const seasonWidgetEl = document.querySelector('#season-widget');
 const seasonTitleEl = document.querySelector('#season-title');
 const seasonListEl = document.querySelector('#season-list');
@@ -32,9 +36,9 @@ const trashCatches = [
   { id: 'trash-boot', name: '낡은 장화', group: '바다 쓰레기', model: 'trash-boot', icon: '🥾', trait: '묵직한 손맛의 정체는 물고기가 아니라 낡은 장화였습니다.', isTrash: true }
 ];
 const fishingPlaces = {
-  amnam: { id: 'amnam', name: '암남공원 방파제', sky: 0x91cfe0, fog: 0x8bc8db, water: [0x0b4169, 0x082f56, 0x061f3f], sun: 0xffd281, light: 0xffdfad, preferred: ['전갱이'] },
-  yeongdo: { id: 'yeongdo', name: '영도 신방파제', sky: 0x789fb8, fog: 0x779aab, water: [0x0a3559, 0x072944, 0x041a31], sun: 0xffe0a8, light: 0xd9e7ed, preferred: ['갈치', '전갱이', '붕장어'] },
-  dadaepo: { id: 'dadaepo', name: '다대포 · 몰운대', sky: 0xd99070, fog: 0xb98270, water: [0x104a72, 0x0b365b, 0x072341], sun: 0xffb657, light: 0xffc88b, preferred: ['농어', '감성돔'] }
+  amnam: { id: 'amnam', name: '암남공원 방파제', sky: 0x91cfe0, fog: 0x8bc8db, water: [0x0b4169, 0x082f56, 0x061f3f], sun: 0xffd281, light: 0xffdfad, catchRates: [{ name: '고등어', rate: 18 }, { name: '전갱이', rate: 15 }, { name: '감성돔', rate: 10 }, { name: '삼치', rate: 9 }, { name: '갈치', rate: 8 }, { name: '학꽁치', rate: 7 }, { name: '갑오징어', rate: 5 }], otherRate: 18, trashRate: 10 },
+  yeongdo: { id: 'yeongdo', name: '영도 신방파제', sky: 0x789fb8, fog: 0x779aab, water: [0x0a3559, 0x072944, 0x041a31], sun: 0xffe0a8, light: 0xd9e7ed, catchRates: [{ name: '전갱이', rate: 17 }, { name: '갈치', rate: 14 }, { name: '붕장어', rate: 12 }, { name: '학꽁치', rate: 9 }, { name: '고등어', rate: 8 }, { name: '감성돔', rate: 6 }], otherRate: 24, trashRate: 10 },
+  dadaepo: { id: 'dadaepo', name: '다대포 · 몰운대', sky: 0xd99070, fog: 0xb98270, water: [0x104a72, 0x0b365b, 0x072341], sun: 0xffb657, light: 0xffc88b, catchRates: [{ name: '도다리', rate: 16 }, { name: '감성돔', rate: 15 }, { name: '숭어', rate: 11 }, { name: '농어', rate: 9 }, { name: '참돔', rate: 7 }, { name: '벵에돔', rate: 5 }], otherRate: 27, trashRate: 10 }
 };
 let selectedFishingPlace = null;
 const initialClock = new Date();
@@ -63,6 +67,12 @@ function renderSeasonWidget() {
   const groupIcons = { 어류: '🐟', 연체류: '🐚', 갑각류: '🦀', 기타: '🌊' };
   seasonTitleEl.textContent = `${month}월 제철 해산물`;
   seasonListEl.innerHTML = featured.map(fish => `<li><span>${groupIcons[fish.group]}</span><b>${fish.name}</b><small>${fish.season}</small></li>`).join('');
+}
+
+function renderCatchRates(place) {
+  catchRatesTitleEl.textContent = place.name;
+  const rows = [...place.catchRates, { name: '기타 해산물', rate: place.otherRate }, { name: '바다 쓰레기', rate: place.trashRate }];
+  catchRatesListEl.innerHTML = rows.map(item => `<li><div><span>${item.name}</span><b>${item.rate}%</b></div><i><span style="width:${item.rate}%"></span></i></li>`).join('');
 }
 
 function setSeasonWidgetCollapsed(collapsed) {
@@ -180,14 +190,20 @@ function showCatchInformation(fish, isNew, count) {
 }
 
 function pickCatch() {
-  if (Math.random() < 0.1) return trashCatches[Math.floor(Math.random() * trashCatches.length)];
-  if (selectedFishingPlace && Math.random() < 0.3) {
-    const localPool = fishCatalog.filter(fish => selectedFishingPlace.preferred.includes(fish.name));
-    if (localPool.length) return localPool[Math.floor(Math.random() * localPool.length)];
+  const place = selectedFishingPlace || fishingPlaces.amnam;
+  const roll = Math.random() * 100;
+  if (roll < place.trashRate) return trashCatches[Math.floor(Math.random() * trashCatches.length)];
+  let cursor = place.trashRate;
+  for (const entry of place.catchRates) {
+    cursor += entry.rate;
+    if (roll < cursor) return fishCatalog.find(fish => fish.name === entry.name);
   }
-  const roll = Math.random();
-  const tier = roll < 0.06 ? 3 : roll < 0.28 ? 2 : 1;
-  const pool = fishCatalog.filter(fish => fish.tier === tier);
+  const featuredNames = new Set(place.catchRates.map(entry => entry.name));
+  const otherPool = fishCatalog.filter(fish => !featuredNames.has(fish.name));
+  const tierRoll = Math.random();
+  const tier = tierRoll < 0.06 ? 3 : tierRoll < 0.28 ? 2 : 1;
+  const tierPool = otherPool.filter(fish => fish.tier === tier);
+  const pool = tierPool.length ? tierPool : otherPool;
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
@@ -267,6 +283,10 @@ scene.add(water);
 
 function applyFishingPlace(place) {
   selectedFishingPlace = place;
+  renderCatchRates(place);
+  catchRatesToggleEl.style.display = 'block';
+  catchRatesToggleEl.setAttribute('aria-expanded', 'false');
+  catchRatesPanelEl.hidden = true;
   applyWaterGradient(place.water);
   sun.material.color.set(place.sun);
   sunLight.color.set(place.light);
@@ -909,6 +929,17 @@ document.querySelector('#collection-back').addEventListener('click', () => {
   }
 });
 
+catchRatesToggleEl.addEventListener('click', () => {
+  const willOpen = catchRatesPanelEl.hidden;
+  catchRatesPanelEl.hidden = !willOpen;
+  catchRatesToggleEl.setAttribute('aria-expanded', String(willOpen));
+});
+
+document.querySelector('#catch-rates-close').addEventListener('click', () => {
+  catchRatesPanelEl.hidden = true;
+  catchRatesToggleEl.setAttribute('aria-expanded', 'false');
+});
+
 document.querySelector('#caught-open-dex').addEventListener('click', event => {
   const index = Number(event.currentTarget.dataset.index);
   if (!Number.isInteger(index) || !fishCatalog[index]) return;
@@ -981,6 +1012,8 @@ menuBack.addEventListener('click', () => {
   statusEl.style.display = 'none';
   helpEl.style.display = 'none';
   currentPlaceEl.style.display = 'none';
+  catchRatesToggleEl.style.display = 'none';
+  catchRatesPanelEl.hidden = true;
   gameClockEl.style.display = 'none';
   seasonWidgetEl.classList.remove('in-game');
   selectedFishingPlace = null;

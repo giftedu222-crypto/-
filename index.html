@@ -4,13 +4,20 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>낚아무라</title>
-  <link rel="stylesheet" href="style.css?v=10" />
+  <link rel="stylesheet" href="style.css?v=11" />
 </head>
 <body>
   <canvas id="game"></canvas>
   <div id="hud">
     <div class="brand">FISHING <span>SIMULATOR</span></div>
     <button id="menu-back" type="button">← 처음으로</button>
+    <button id="catch-rates-toggle" type="button" aria-expanded="false">🎯 포획 확률</button>
+    <aside id="catch-rates-panel" aria-label="현재 낚시터 포획 확률" hidden>
+      <header><div><small>GAME CATCH RATE</small><strong id="catch-rates-title"></strong></div><button id="catch-rates-close" type="button" aria-label="포획 확률 닫기">×</button></header>
+      <p>현지 주요 어종을 반영한 게임 내 확률</p>
+      <ul id="catch-rates-list"></ul>
+      <small class="rates-note">계절·시간·날씨에 따른 실제 조과와는 차이가 있습니다.</small>
+    </aside>
     <div id="current-place"></div>
     <div id="game-clock"><span id="clock-icon">☀</span><strong id="clock-time">12:00</strong><small>게임 시간 · 1초=1분</small></div>
     <div id="status">바다를 클릭해 찌를 던져보세요</div>
@@ -24,9 +31,9 @@
     <div class="panel-card location-panel">
       <div class="location-heading"><small>BUSAN FISHING MAP</small><h2>어디로 떠날까요?</h2><p>장소마다 풍경과 자주 만나는 수산생물이 달라집니다.</p></div>
       <div id="location-grid" class="location-grid">
-        <button type="button" class="location-card amnam" data-place="amnam"><span class="location-icon">🌊</span><small>서구 암남동</small><strong>암남공원 방파제</strong><p>해안 절벽 아래, 전갱이 떼를 만날 수 있는 생활낚시 명소</p><em>전갱이 출현 보너스</em></button>
-        <button type="button" class="location-card yeongdo" data-place="yeongdo"><span class="location-icon">⚓</span><small>영도구 동삼동</small><strong>영도 신방파제</strong><p>긴 방파제와 짙푸른 바다에서 즐기는 조용한 낚시</p><em>갈치 · 전갱이 · 붕장어 보너스</em></button>
-        <button type="button" class="location-card dadaepo" data-place="dadaepo"><span class="location-icon">🌅</span><small>사하구 다대동</small><strong>다대포 · 몰운대</strong><p>낙동강과 남해가 만나는 붉은 노을의 낚시 포인트</p><em>농어 · 감성돔 출현 보너스</em></button>
+        <button type="button" class="location-card amnam" data-place="amnam"><span class="location-icon">🌊</span><small>서구 암남동</small><strong>암남공원 방파제</strong><p>해안 절벽 아래, 떼고기가 회유하는 생활낚시 명소</p><em>고등어 18% · 전갱이 15% · 감성돔 10%</em></button>
+        <button type="button" class="location-card yeongdo" data-place="yeongdo"><span class="location-icon">⚓</span><small>영도구 동삼동</small><strong>영도 신방파제</strong><p>긴 방파제와 짙푸른 바다에서 즐기는 조용한 낚시</p><em>전갱이 17% · 갈치 14% · 붕장어 12%</em></button>
+        <button type="button" class="location-card dadaepo" data-place="dadaepo"><span class="location-icon">🌅</span><small>사하구 다대동</small><strong>다대포 · 몰운대</strong><p>낙동강과 남해가 만나는 붉은 노을의 낚시 포인트</p><em>도다리 16% · 감성돔 15% · 숭어 11%</em></button>
       </div>
       <button id="location-back" class="back-button" type="button">← 뒤로가기</button>
     </div>
@@ -74,6 +81,6 @@
   </section>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="catalog-data.js?v=1"></script>
-  <script src="game.js?v=31"></script>
+  <script src="game.js?v=32"></script>
 </body>
 </html>
