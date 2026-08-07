@@ -722,6 +722,23 @@ function createTetrapod(scale = 1) {
   return pod;
 }
 
+function addCoastalSkirt(group, centerX, width, z, color, count = 12, seed = 0) {
+  const material = new THREE.MeshBasicMaterial({ color, fog: true });
+  for (let i = 0; i < count; i++) {
+    const progress = count === 1 ? 0.5 : i / (count - 1);
+    const radius = 1.05 + (Math.sin(i * 2.17 + seed) + 1) * 0.42;
+    const shelf = new THREE.Mesh(new THREE.SphereGeometry(radius, 20, 11), material);
+    shelf.scale.set(1.8 + (i % 3) * 0.32, 0.16 + (i % 2) * 0.035, 0.72 + (i % 4) * 0.08);
+    shelf.position.set(
+      centerX - width / 2 + width * progress,
+      -0.03 + (i % 3) * 0.025,
+      z + Math.sin(i * 1.71 + seed) * 2.2
+    );
+    shelf.rotation.y = i * 0.61 + seed;
+    group.add(shelf);
+  }
+}
+
 function createFishingBoat(hullColor = 0x244b5c) {
   const boat = new THREE.Group();
   const hullShape = new THREE.Shape();
@@ -799,6 +816,7 @@ for (let i = 0; i < 7; i++) {
     amnam.add(pine);
   }
 }
+addCoastalSkirt(amnam, -20, 58, -38, 0x2a403b, 15, 0.7);
 const towerA = createCableTower(8.4);
 towerA.position.set(-19, 8.7, -42);
 
@@ -832,6 +850,7 @@ for (let i = 0; i < 4; i++) {
   amnam.add(gondola);
 }
 addRidge(amnam, 72, 6.8, 0x3a554d, [51, -0.15, -76], 3.3);
+addCoastalSkirt(amnam, 51, 76, -72, 0x354d47, 16, 2.4);
 for (let i = 0; i < 8; i++) {
   const building = createBuilding(2.5 + (i % 3) * 0.5, 6.5 + (i % 4) * 2.25, 2.4, i % 2 ? 0xb9b8aa : 0x819499);
   building.position.set(38 + i * 3.3, 1.15 + (i % 2) * 0.32, -78 - (i % 3) * 3.5);
@@ -846,6 +865,7 @@ amnam.add(amnamLabel);
 const yeongdo = placeScenery.yeongdo;
 addRidge(yeongdo, 145, 17, 0x344c55, [22, 0, -112], 2.5);
 addRidge(yeongdo, 80, 22, 0x263e48, [50, 0, -88], 4.2);
+addCoastalSkirt(yeongdo, 18, 138, -84, 0x30464d, 22, 1.5);
 const bridgeDeck = new THREE.Mesh(new THREE.BoxGeometry(190, 0.55, 1.25), coastalMaterial(0xaeb9bc, 0.55, 0.35));
 bridgeDeck.position.set(0, 9.6, -82);
 yeongdo.add(bridgeDeck);
@@ -866,10 +886,12 @@ const breakwater = new THREE.Mesh(new THREE.BoxGeometry(38, 1.1, 4.2), coastalMa
 breakwater.position.set(-2, 0.35, -28);
 breakwater.rotation.y = -0.055;
 yeongdo.add(breakwater);
-for (let i = 0; i < 12; i++) {
-  const pod = createTetrapod(0.8 + (i % 3) * 0.12);
-  pod.position.set(-17 + i * 3.2, 0.1, -25.4 + (i % 2) * 0.6);
-  pod.rotation.set(0.15 * (i % 2), i * 0.62, 0.1);
+for (let i = 0; i < 28; i++) {
+  const row = Math.floor(i / 14);
+  const column = i % 14;
+  const pod = createTetrapod(0.68 + (i % 4) * 0.11);
+  pod.position.set(-19.5 + column * 3.05 + row * 0.75, 0.06 + row * 0.55, -25.1 + row * 1.55 + (column % 2) * 0.24);
+  pod.rotation.set(0.12 * ((i % 3) - 1), i * 0.67, 0.08 * (i % 2));
   yeongdo.add(pod);
 }
 const lighthouse = createLighthouse();
@@ -905,6 +927,8 @@ yeongdo.add(yeongdoLabel);
 const dadaepo = placeScenery.dadaepo;
 addRidge(dadaepo, 82, 14, 0x3b5144, [-48, 0, -94], 0.8);
 addRidge(dadaepo, 72, 11, 0x33483f, [53, 0, -103], 3.4);
+addCoastalSkirt(dadaepo, -48, 82, -88, 0x465841, 15, 0.4);
+addCoastalSkirt(dadaepo, 53, 74, -96, 0x3c5140, 14, 2.1);
 const sandMaterial = new THREE.MeshBasicMaterial({ color: 0x8c7654, fog: true });
 for (let i = 0; i < 6; i++) {
   const sandbar = new THREE.Mesh(new THREE.SphereGeometry(5 + i * 0.75, 28, 14), sandMaterial);
@@ -937,6 +961,7 @@ for (let i = 0; i < 3; i++) {
   dadaepo.add(boat);
 }
 addRidge(dadaepo, 58, 6.2, 0x3d5546, [-29, 0, -53], 4.8);
+addCoastalSkirt(dadaepo, -29, 62, -49, 0x475a42, 14, 4.2);
 const molundaeTreeHeights = [4.1, 4.65, 4.35, 4.05, 3.75];
 for (let i = 0; i < 5; i++) {
   const pine = createPine(1.35 + i * 0.12);
