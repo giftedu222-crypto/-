@@ -20,6 +20,8 @@ const seasonWidgetEl = document.querySelector('#season-widget');
 const seasonTitleEl = document.querySelector('#season-title');
 const seasonListEl = document.querySelector('#season-list');
 const seasonToggleEl = document.querySelector('#season-toggle');
+const seasonPrevEl = document.querySelector('#season-prev');
+const seasonNextEl = document.querySelector('#season-next');
 const collectionBackButton = document.querySelector('#collection-back');
 const collectionBackAnchor = document.querySelector('#collection-back-anchor');
 const collectionCard = document.querySelector('#collection .collection-card');
@@ -60,13 +62,14 @@ const trashCatches = [
   { id: 'trash-boot', name: '낡은 장화', group: '바다 쓰레기', model: 'trash-boot', icon: '🥾', trait: '묵직한 손맛의 정체는 물고기가 아니라 낡은 장화였습니다.', isTrash: true }
 ];
 const fishingPlaces = {
-  amnam: { id: 'amnam', name: '암남공원 방파제', sky: 0x68abc1, fog: 0x719ba8, fogDensity: 0.0048, water: [0x083b62, 0x062b4d, 0x041b34], shore: 0x293536, edge: 0xe3b83f, sun: 0xffd281, light: 0xffdfad, catchRates: [{ name: '고등어', rate: 18 }, { name: '전갱이', rate: 15 }, { name: '감성돔', rate: 10 }, { name: '삼치', rate: 9 }, { name: '갈치', rate: 8 }, { name: '학꽁치', rate: 7 }, { name: '갑오징어', rate: 5 }], otherRate: 18, trashRate: 10 },
-  yeongdo: { id: 'yeongdo', name: '영도 신방파제', sky: 0x647f94, fog: 0x687f8b, fogDensity: 0.0045, water: [0x072f50, 0x05233c, 0x031729], shore: 0x4c5352, edge: 0xe7d66a, sun: 0xffe0a8, light: 0xd9e7ed, catchRates: [{ name: '전갱이', rate: 17 }, { name: '갈치', rate: 14 }, { name: '붕장어', rate: 12 }, { name: '학꽁치', rate: 9 }, { name: '고등어', rate: 8 }, { name: '감성돔', rate: 6 }], otherRate: 24, trashRate: 10 },
-  dadaepo: { id: 'dadaepo', name: '다대포 · 몰운대', sky: 0x73a1b3, fog: 0x7f9698, fogDensity: 0.0042, water: [0x0a3c5d, 0x072c49, 0x041c31], shore: 0x766a50, edge: 0xc7aa70, sun: 0xffb657, light: 0xffc88b, catchRates: [{ name: '도다리', rate: 16 }, { name: '감성돔', rate: 15 }, { name: '숭어', rate: 11 }, { name: '농어', rate: 9 }, { name: '참돔', rate: 7 }, { name: '벵에돔', rate: 5 }], otherRate: 27, trashRate: 10 }
+  amnam: { id: 'amnam', name: '암남공원 방파제', startMinutes: 720, sky: 0x68abc1, fog: 0x719ba8, fogDensity: 0.0048, water: [0x083b62, 0x062b4d, 0x041b34], shore: 0x293536, edge: 0xe3b83f, sun: 0xffd281, light: 0xffdfad, catchRates: [{ name: '고등어', rate: 18 }, { name: '전갱이', rate: 15 }, { name: '감성돔', rate: 10 }, { name: '삼치', rate: 9 }, { name: '갈치', rate: 8 }, { name: '학꽁치', rate: 7 }, { name: '갑오징어', rate: 5 }], otherRate: 18, trashRate: 10 },
+  yeongdo: { id: 'yeongdo', name: '영도 신방파제', startMinutes: 1320, sky: 0x647f94, fog: 0x687f8b, fogDensity: 0.0045, water: [0x072f50, 0x05233c, 0x031729], shore: 0x4c5352, edge: 0xe7d66a, sun: 0xffe0a8, light: 0xd9e7ed, catchRates: [{ name: '전갱이', rate: 17 }, { name: '갈치', rate: 14 }, { name: '붕장어', rate: 12 }, { name: '학꽁치', rate: 9 }, { name: '고등어', rate: 8 }, { name: '감성돔', rate: 6 }], otherRate: 24, trashRate: 10 },
+  dadaepo: { id: 'dadaepo', name: '다대포 · 몰운대', startMinutes: 1070, sky: 0x73a1b3, fog: 0x7f9698, fogDensity: 0.0042, water: [0x0a3c5d, 0x072c49, 0x041c31], shore: 0x766a50, edge: 0xc7aa70, sun: 0xffb657, light: 0xffc88b, catchRates: [{ name: '도다리', rate: 16 }, { name: '감성돔', rate: 15 }, { name: '숭어', rate: 11 }, { name: '농어', rate: 9 }, { name: '참돔', rate: 7 }, { name: '벵에돔', rate: 5 }], otherRate: 27, trashRate: 10 }
 };
 let selectedFishingPlace = null;
 const initialClock = new Date();
 let gameMinutes = initialClock.getHours() * 60 + initialClock.getMinutes();
+let seasonViewMonth = initialClock.getMonth() + 1;
 
 function seasonIncludesMonth(season, month) {
   if (season === '연중') return true;
@@ -78,7 +81,7 @@ function seasonIncludesMonth(season, month) {
 }
 
 function renderSeasonWidget() {
-  const month = new Date().getMonth() + 1;
+  const month = seasonViewMonth;
   const candidates = fishCatalog.filter(fish => seasonIncludesMonth(fish.season, month));
   const groups = ['어류', '연체류', '갑각류', '기타'];
   const buckets = groups.map(group => candidates.filter(fish => fish.group === group));
@@ -110,6 +113,16 @@ seasonToggleEl.addEventListener('click', () => {
   const collapsed = !seasonWidgetEl.classList.contains('collapsed');
   setSeasonWidgetCollapsed(collapsed);
   try { localStorage.setItem('season-widget-collapsed-v1', collapsed ? '1' : '0'); } catch {}
+});
+
+seasonPrevEl.addEventListener('click', () => {
+  seasonViewMonth = seasonViewMonth === 1 ? 12 : seasonViewMonth - 1;
+  renderSeasonWidget();
+});
+
+seasonNextEl.addEventListener('click', () => {
+  seasonViewMonth = seasonViewMonth === 12 ? 1 : seasonViewMonth + 1;
+  renderSeasonWidget();
 });
 
 try { setSeasonWidgetCollapsed(localStorage.getItem('season-widget-collapsed-v1') === '1'); } catch { setSeasonWidgetCollapsed(false); }
@@ -373,6 +386,7 @@ scene.add(water);
 
 function applyFishingPlace(place) {
   selectedFishingPlace = place;
+  gameMinutes = place.startMinutes;
   renderCatchRates(place);
   catchRatesToggleEl.style.display = 'block';
   catchRatesToggleEl.setAttribute('aria-expanded', 'false');

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>낚아무라</title>
-  <link rel="stylesheet" href="style.css?v=23" />
+  <link rel="stylesheet" href="style.css?v=24" />
 </head>
 <body>
   <canvas id="game"></canvas>
@@ -25,6 +25,7 @@
   </div>
   <aside id="season-widget" aria-label="이달의 제철 해산물">
     <header><span>旬</span><div><small>REAL SEASON</small><strong id="season-title">이달의 제철</strong></div><button id="season-toggle" type="button" aria-expanded="true" aria-label="제철 목록 접기">−</button></header>
+    <div id="season-month-nav"><button id="season-prev" type="button" aria-label="이전 달 제철 해산물">‹</button><span>월 선택</span><button id="season-next" type="button" aria-label="다음 달 제철 해산물">›</button></div>
     <ul id="season-list"></ul>
   </aside>
   <section id="location-select" class="panel-screen" aria-label="낚시 장소 선택">
@@ -87,6 +88,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="catalog-data.js?v=1"></script>
   <script src="recipe-photo-data.js?v=3"></script>
-  <script src="game.js?v=59"></script>
+  <script src="game.js?v=60"></script>
 </body>
 </html>
