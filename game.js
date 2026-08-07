@@ -562,6 +562,37 @@ function addLine(group, from, to, color = 0x252b2d, opacity = 1) {
   return line;
 }
 
+function createCauseway(start, end, width = 4.4) {
+  const causeway = new THREE.Group();
+  const direction = end.clone().sub(start);
+  const length = Math.hypot(direction.x, direction.z);
+  const angle = -Math.atan2(direction.z, direction.x);
+  const midpoint = start.clone().lerp(end, 0.5);
+  const base = new THREE.Mesh(new THREE.BoxGeometry(length, 0.7, width), coastalMaterial(0x5f6868, 0.94));
+  base.position.copy(midpoint);
+  base.rotation.y = angle;
+  const road = new THREE.Mesh(new THREE.BoxGeometry(length, 0.08, width - 0.75), coastalMaterial(0x343d3f, 0.88, 0.05));
+  road.position.copy(midpoint);
+  road.position.y += 0.39;
+  road.rotation.y = angle;
+  causeway.add(base, road);
+
+  const normal = new THREE.Vector3(-direction.z, 0, direction.x).normalize();
+  [-1, 1].forEach(side => {
+    const offset = normal.clone().multiplyScalar((width / 2 - 0.22) * side);
+    const railStart = start.clone().add(offset).add(new THREE.Vector3(0, 1.18, 0));
+    const railEnd = end.clone().add(offset).add(new THREE.Vector3(0, 1.18, 0));
+    addLine(causeway, railStart, railEnd, 0xc2c9c7, 0.92);
+    for (let i = 0; i <= 10; i++) {
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.07, 0.82, 8), coastalMaterial(0xaeb8b7, 0.5, 0.42));
+      post.position.copy(start).lerp(end, i / 10).add(offset);
+      post.position.y += 0.8;
+      causeway.add(post);
+    }
+  });
+  return causeway;
+}
+
 function createCableTower(height = 9) {
   const tower = new THREE.Group();
   const steel = coastalMaterial(0x59666b, 0.42, 0.62);
@@ -800,9 +831,10 @@ for (let i = 0; i < 4; i++) {
   cableCars.push(gondola);
   amnam.add(gondola);
 }
+addRidge(amnam, 72, 6.8, 0x3a554d, [51, -0.15, -76], 3.3);
 for (let i = 0; i < 8; i++) {
   const building = createBuilding(2.5 + (i % 3) * 0.5, 6.5 + (i % 4) * 2.25, 2.4, i % 2 ? 0xb9b8aa : 0x819499);
-  building.position.set(38 + i * 3.3, 0, -78 - (i % 3) * 3.5);
+  building.position.set(38 + i * 3.3, 1.15 + (i % 2) * 0.32, -78 - (i % 3) * 3.5);
   building.scale.setScalar(0.88);
   amnam.add(building);
 }
@@ -843,6 +875,12 @@ for (let i = 0; i < 12; i++) {
 const lighthouse = createLighthouse();
 lighthouse.position.set(-18.5, 0.8, -30.4);
 yeongdo.add(lighthouse);
+const lighthouseCauseway = createCauseway(
+  new THREE.Vector3(-15.7, 0.35, -31.4),
+  new THREE.Vector3(45, 0.35, -91),
+  4.6
+);
+yeongdo.add(lighthouseCauseway);
 for (let i = 0; i < 3; i++) {
   const crane = createCrane(i === 1 ? 0xd96832 : 0xe8a03d);
   crane.position.set(17 + i * 10, 0, -53 - i * 2.5);
@@ -898,9 +936,11 @@ for (let i = 0; i < 3; i++) {
   boat.rotation.y = i % 2 ? 0.22 : -0.18;
   dadaepo.add(boat);
 }
+addRidge(dadaepo, 58, 6.2, 0x3d5546, [-29, 0, -53], 4.8);
+const molundaeTreeHeights = [4.1, 4.65, 4.35, 4.05, 3.75];
 for (let i = 0; i < 5; i++) {
   const pine = createPine(1.35 + i * 0.12);
-  pine.position.set(-38 + i * 4.5, 2.5 + (i % 2), -48 - i * 2);
+  pine.position.set(-38 + i * 4.5, molundaeTreeHeights[i], -51 - i * 0.75);
   dadaepo.add(pine);
 }
 const dadaepoLabel = createPlaceLabel('다대포 · 몰운대', 'NAKDONG ESTUARY SUNSET');
