@@ -60,9 +60,9 @@ const trashCatches = [
   { id: 'trash-boot', name: '낡은 장화', group: '바다 쓰레기', model: 'trash-boot', icon: '🥾', trait: '묵직한 손맛의 정체는 물고기가 아니라 낡은 장화였습니다.', isTrash: true }
 ];
 const fishingPlaces = {
-  amnam: { id: 'amnam', name: '암남공원 방파제', sky: 0x91cfe0, fog: 0x8bc8db, water: [0x0b4169, 0x082f56, 0x061f3f], sun: 0xffd281, light: 0xffdfad, catchRates: [{ name: '고등어', rate: 18 }, { name: '전갱이', rate: 15 }, { name: '감성돔', rate: 10 }, { name: '삼치', rate: 9 }, { name: '갈치', rate: 8 }, { name: '학꽁치', rate: 7 }, { name: '갑오징어', rate: 5 }], otherRate: 18, trashRate: 10 },
-  yeongdo: { id: 'yeongdo', name: '영도 신방파제', sky: 0x789fb8, fog: 0x779aab, water: [0x0a3559, 0x072944, 0x041a31], sun: 0xffe0a8, light: 0xd9e7ed, catchRates: [{ name: '전갱이', rate: 17 }, { name: '갈치', rate: 14 }, { name: '붕장어', rate: 12 }, { name: '학꽁치', rate: 9 }, { name: '고등어', rate: 8 }, { name: '감성돔', rate: 6 }], otherRate: 24, trashRate: 10 },
-  dadaepo: { id: 'dadaepo', name: '다대포 · 몰운대', sky: 0xd99070, fog: 0xb98270, water: [0x104a72, 0x0b365b, 0x072341], sun: 0xffb657, light: 0xffc88b, catchRates: [{ name: '도다리', rate: 16 }, { name: '감성돔', rate: 15 }, { name: '숭어', rate: 11 }, { name: '농어', rate: 9 }, { name: '참돔', rate: 7 }, { name: '벵에돔', rate: 5 }], otherRate: 27, trashRate: 10 }
+  amnam: { id: 'amnam', name: '암남공원 방파제', sky: 0x68abc1, fog: 0x719ba8, fogDensity: 0.0048, water: [0x083b62, 0x062b4d, 0x041b34], shore: 0x293536, edge: 0xe3b83f, sun: 0xffd281, light: 0xffdfad, catchRates: [{ name: '고등어', rate: 18 }, { name: '전갱이', rate: 15 }, { name: '감성돔', rate: 10 }, { name: '삼치', rate: 9 }, { name: '갈치', rate: 8 }, { name: '학꽁치', rate: 7 }, { name: '갑오징어', rate: 5 }], otherRate: 18, trashRate: 10 },
+  yeongdo: { id: 'yeongdo', name: '영도 신방파제', sky: 0x647f94, fog: 0x687f8b, fogDensity: 0.0045, water: [0x072f50, 0x05233c, 0x031729], shore: 0x4c5352, edge: 0xe7d66a, sun: 0xffe0a8, light: 0xd9e7ed, catchRates: [{ name: '전갱이', rate: 17 }, { name: '갈치', rate: 14 }, { name: '붕장어', rate: 12 }, { name: '학꽁치', rate: 9 }, { name: '고등어', rate: 8 }, { name: '감성돔', rate: 6 }], otherRate: 24, trashRate: 10 },
+  dadaepo: { id: 'dadaepo', name: '다대포 · 몰운대', sky: 0x73a1b3, fog: 0x7f9698, fogDensity: 0.0042, water: [0x0a3c5d, 0x072c49, 0x041c31], shore: 0x766a50, edge: 0xc7aa70, sun: 0xffb657, light: 0xffc88b, catchRates: [{ name: '도다리', rate: 16 }, { name: '감성돔', rate: 15 }, { name: '숭어', rate: 11 }, { name: '농어', rate: 9 }, { name: '참돔', rate: 7 }, { name: '벵에돔', rate: 5 }], otherRate: 27, trashRate: 10 }
 };
 let selectedFishingPlace = null;
 const initialClock = new Date();
@@ -265,7 +265,7 @@ function pickCatch() {
 }
 
 const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x8bc8db, 0.011);
+scene.fog = new THREE.FogExp2(0x719ba8, 0.0048);
 
 const camera = new THREE.PerspectiveCamera(65, innerWidth / innerHeight, 0.1, 800);
 camera.position.set(0, 2.35, 11);
@@ -276,11 +276,14 @@ renderer.setSize(innerWidth, innerHeight);
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setClearColor(0x91cfe0);
 renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 0.92;
 renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-const hemisphereLight = new THREE.HemisphereLight(0xe9fbff, 0x183b48, 2.1);
+const hemisphereLight = new THREE.HemisphereLight(0xe9fbff, 0x183b48, 1.3);
 scene.add(hemisphereLight);
-const sunLight = new THREE.DirectionalLight(0xffdfad, 2.6);
+const sunLight = new THREE.DirectionalLight(0xffdfad, 1.85);
 sunLight.position.set(-35, 45, 20);
 scene.add(sunLight);
 
@@ -308,6 +311,34 @@ const starMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.72, tra
 const stars = new THREE.Points(starGeometry, starMaterial);
 scene.add(stars);
 
+const cloudMaterial = new THREE.MeshLambertMaterial({ color: 0xeaf4f2, transparent: true, opacity: 0.2, depthWrite: false, fog: false });
+const clouds = new THREE.Group();
+for (let i = 0; i < 11; i++) {
+  const cloud = new THREE.Group();
+  for (let puff = 0; puff < 5; puff++) {
+    const puffMesh = new THREE.Mesh(new THREE.SphereGeometry(2.8 + (puff % 2) * 1.2, 16, 10), cloudMaterial);
+    puffMesh.position.set((puff - 2) * 3.1, Math.sin(puff * 1.8) * 1.1, (puff % 2) * 0.7);
+    puffMesh.scale.y = 0.48;
+    cloud.add(puffMesh);
+  }
+  cloud.position.set(-95 + i * 20, 29 + (i % 4) * 7, -105 - (i % 3) * 30);
+  cloud.scale.setScalar(0.75 + (i % 3) * 0.18);
+  cloud.userData.speed = 0.22 + (i % 4) * 0.04;
+  clouds.add(cloud);
+}
+scene.add(clouds);
+
+const seabirds = new THREE.Group();
+for (let i = 0; i < 9; i++) {
+  const bird = new THREE.Group();
+  addLine(bird, new THREE.Vector3(-0.7, 0, 0), new THREE.Vector3(0, 0.22, 0), 0x27383c, 0.75);
+  addLine(bird, new THREE.Vector3(0, 0.22, 0), new THREE.Vector3(0.7, 0, 0), 0x27383c, 0.75);
+  bird.position.set(-34 + i * 8.5, 12 + (i % 3) * 2.4, -61 - (i % 4) * 7);
+  bird.scale.setScalar(0.45 + (i % 3) * 0.12);
+  seabirds.add(bird);
+}
+scene.add(seabirds);
+
 // Layered Gerstner-like waves made from several moving sine bands.
 const waterGeometry = new THREE.PlaneGeometry(600, 600, 90, 90);
 const waterPosition = waterGeometry.attributes.position;
@@ -327,11 +358,13 @@ function applyWaterGradient(colors) {
   waterGeometry.attributes.color.needsUpdate = true;
 }
 applyWaterGradient(fishingPlaces.amnam.water);
-const waterMaterial = new THREE.MeshLambertMaterial({
+const waterMaterial = new THREE.MeshStandardMaterial({
   color: 0xffffff,
   vertexColors: true,
   transparent: true,
   opacity: 0.98,
+  roughness: 0.42,
+  metalness: 0.025,
   flatShading: false
 });
 const water = new THREE.Mesh(waterGeometry, waterMaterial);
@@ -345,6 +378,9 @@ function applyFishingPlace(place) {
   catchRatesToggleEl.setAttribute('aria-expanded', 'false');
   catchRatesPanelEl.hidden = true;
   applyWaterGradient(place.water);
+  shore.material.color.set(place.shore);
+  shoreEdge.material.color.set(place.edge);
+  scene.fog.density = place.fogDensity;
   sun.material.color.set(place.sun);
   sunLight.color.set(place.light);
   currentPlaceEl.textContent = `현재 장소 · ${place.name}`;
@@ -377,31 +413,73 @@ function updateTimeOfDay(delta) {
   moon.position.set(-Math.cos(solarAngle) * 100, -altitude * 62, -150);
   moon.visible = altitude < 0.12;
   starMaterial.opacity = THREE.MathUtils.clamp((-altitude + 0.02) / 0.42, 0, 0.92);
-  sunLight.intensity = 0.12 + daylight * 2.48;
-  hemisphereLight.intensity = 0.28 + daylight * 1.82;
-  waterMaterial.color.setScalar(0.28 + daylight * 0.72);
+  cloudMaterial.opacity = 0.018 + daylight * 0.09;
+  sunLight.intensity = 0.1 + daylight * 1.75;
+  hemisphereLight.intensity = 0.22 + daylight * 1.08;
+  waterMaterial.color.setScalar(0.3 + daylight * 0.34);
 
   clockTimeEl.textContent = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
   clockIconEl.textContent = altitude > 0.18 ? '☀' : altitude > -0.08 ? '◐' : '☾';
 }
 
+const shoreTextureCanvas = document.createElement('canvas');
+shoreTextureCanvas.width = shoreTextureCanvas.height = 256;
+const shoreTextureContext = shoreTextureCanvas.getContext('2d');
+shoreTextureContext.fillStyle = '#bfc2bd';
+shoreTextureContext.fillRect(0, 0, 256, 256);
+for (let i = 0; i < 2600; i++) {
+  const shade = 95 + Math.floor(Math.random() * 95);
+  shoreTextureContext.fillStyle = `rgba(${shade},${shade},${shade},${0.08 + Math.random() * 0.12})`;
+  const size = 1 + Math.random() * 2.2;
+  shoreTextureContext.fillRect(Math.random() * 256, Math.random() * 256, size, size);
+}
+const shoreTexture = new THREE.CanvasTexture(shoreTextureCanvas);
+shoreTexture.wrapS = shoreTexture.wrapT = THREE.RepeatWrapping;
+shoreTexture.repeat.set(5, 3);
+shoreTexture.encoding = THREE.sRGBEncoding;
+
 const shore = new THREE.Mesh(
   new THREE.PlaneGeometry(38, 24),
-  new THREE.MeshStandardMaterial({ color: 0xcbb27f, roughness: 0.95 })
+  new THREE.MeshStandardMaterial({ color: 0x303b3d, map: shoreTexture, roughness: 0.94, metalness: 0.025 })
 );
 shore.rotation.x = -Math.PI / 2;
-shore.position.set(0, -0.08, 16);
+shore.position.set(0, 0.075, 16);
+shore.receiveShadow = true;
 scene.add(shore);
 
-for (let i = 0; i < 34; i++) {
-  const radius = 0.28 + Math.random() * 0.9;
-  const rockColor = new THREE.Color().setHSL(0.54 + Math.random() * 0.035, 0.12, 0.17 + Math.random() * 0.07);
+const shoreEdge = new THREE.Mesh(
+  new THREE.BoxGeometry(38, 0.18, 0.34),
+  new THREE.MeshStandardMaterial({ color: 0xe3b83f, roughness: 0.72 })
+);
+shoreEdge.position.set(0, 0.16, 4.08);
+shoreEdge.receiveShadow = true;
+scene.add(shoreEdge);
+
+const bollardMaterial = new THREE.MeshStandardMaterial({ color: 0x273338, roughness: 0.42, metalness: 0.58 });
+[-9.2, 9.2].forEach(x => {
+  const bollard = new THREE.Group();
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.31, 0.72, 16), bollardMaterial);
+  stem.position.y = 0.36;
+  const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.43, 0.34, 0.16, 16), bollardMaterial);
+  cap.position.y = 0.76;
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.48, 0.1, 18), bollardMaterial);
+  base.position.y = 0.05;
+  bollard.add(stem, cap, base);
+  bollard.position.set(x, 0.12, 6.2);
+  bollard.castShadow = true;
+  scene.add(bollard);
+});
+
+for (let i = 0; i < 24; i++) {
+  const radius = 0.38 + Math.random() * 1.15;
+  const rockColor = new THREE.Color().setHSL(0.52 + Math.random() * 0.035, 0.1, 0.12 + Math.random() * 0.09);
   const rock = new THREE.Mesh(
-    new THREE.DodecahedronGeometry(radius, 1),
-    new THREE.MeshStandardMaterial({ color: rockColor, roughness: 0.96 })
+    new THREE.IcosahedronGeometry(radius, 2),
+    new THREE.MeshStandardMaterial({ color: rockColor, roughness: 0.88, metalness: 0.03, flatShading: true })
   );
-  const x = (Math.random() - 0.5) * 42;
-  const z = 4 + Math.random() * 24;
+  const side = i % 2 ? 1 : -1;
+  const x = side * (6.5 + Math.random() * 15);
+  const z = 3 + Math.random() * 23;
   rock.position.set(x, radius * 0.2, z);
   rock.scale.set(0.75 + Math.random() * 0.8, 0.45 + Math.random() * 0.55, 0.7 + Math.random() * 0.8);
   rock.rotation.set(Math.random() * 0.45, Math.random() * Math.PI, Math.random() * 0.35);
@@ -410,8 +488,8 @@ for (let i = 0; i < 34; i++) {
 
   if (i % 4 === 0) {
     const moss = new THREE.Mesh(
-      new THREE.SphereGeometry(radius * 0.52, 10, 7),
-      new THREE.MeshStandardMaterial({ color: 0x344f3e, roughness: 1 })
+      new THREE.SphereGeometry(radius * 0.54, 14, 9),
+      new THREE.MeshStandardMaterial({ color: 0x263e35, roughness: 1 })
     );
     moss.position.set(x, radius * 0.58, z);
     moss.scale.set(0.85, 0.16, 0.65);
@@ -420,99 +498,341 @@ for (let i = 0; i < 34; i++) {
   }
 }
 
-const islands = new THREE.Group();
-for (let i = 0; i < 11; i++) {
-  const height = 11 + Math.random() * 18;
-  const radius = 9 + Math.random() * 10;
-  const mountainColor = new THREE.Color().setHSL(0.45 + Math.random() * 0.025, 0.28, 0.19 + Math.random() * 0.055);
-  const mountain = new THREE.Mesh(
-    new THREE.ConeGeometry(radius, height, 9 + Math.floor(Math.random() * 3), 3),
-    new THREE.MeshStandardMaterial({ color: mountainColor, roughness: 1, flatShading: true })
-  );
-  mountain.position.set(-76 + i * 15.5, height * 0.5 - 0.6, -78 - Math.random() * 28);
-  mountain.scale.z = 0.58 + Math.random() * 0.25;
-  mountain.rotation.y = Math.random() * Math.PI;
-  islands.add(mountain);
-
-  const foothill = new THREE.Mesh(
-    new THREE.DodecahedronGeometry(radius * 0.85, 1),
-    new THREE.MeshStandardMaterial({ color: 0x254942, roughness: 1, flatShading: true })
-  );
-  foothill.position.set(mountain.position.x + (Math.random() - 0.5) * 6, 1.1, mountain.position.z + 5);
-  foothill.scale.set(1.35, 0.35, 0.72);
-  islands.add(foothill);
-}
-scene.add(islands);
-
-// Place-specific Busan landmarks.
+// Layered coastal silhouettes and recognizable Busan landmarks.
 const placeScenery = { amnam: new THREE.Group(), yeongdo: new THREE.Group(), dadaepo: new THREE.Group() };
 
-const amnamCliff = new THREE.Mesh(
-  new THREE.DodecahedronGeometry(7.5, 1),
-  new THREE.MeshStandardMaterial({ color: 0x263c3b, roughness: 1, flatShading: true })
-);
-amnamCliff.position.set(-18, 5.2, -31);
-amnamCliff.scale.set(1.35, 1.55, 0.72);
-placeScenery.amnam.add(amnamCliff);
-const cableStart = new THREE.Vector3(-22, 15.5, -29);
-const cableEnd = new THREE.Vector3(19, 18, -49);
-placeScenery.amnam.add(new THREE.Line(
-  new THREE.BufferGeometry().setFromPoints([cableStart, cableEnd]),
-  new THREE.LineBasicMaterial({ color: 0x1a2226 })
-));
-for (let i = 0; i < 3; i++) {
-  const gondola = new THREE.Mesh(
-    new THREE.BoxGeometry(1.3, 0.82, 0.86),
-    new THREE.MeshStandardMaterial({ color: i % 2 ? 0xf0b43d : 0xd34738, roughness: 0.55 })
-  );
-  gondola.position.lerpVectors(cableStart, cableEnd, 0.2 + i * 0.28);
-  gondola.position.y -= 0.62;
-  placeScenery.amnam.add(gondola);
+function coastalMaterial(color, roughness = 0.9, metalness = 0.02) {
+  return new THREE.MeshStandardMaterial({ color, roughness, metalness, flatShading: false });
 }
 
-const breakwater = new THREE.Mesh(
-  new THREE.BoxGeometry(31, 0.8, 3.2),
-  new THREE.MeshStandardMaterial({ color: 0x555d5f, roughness: 0.96 })
-);
-breakwater.position.set(-4, 0.25, -25);
-breakwater.rotation.y = -0.08;
-placeScenery.yeongdo.add(breakwater);
-const lighthouse = new THREE.Mesh(
-  new THREE.CylinderGeometry(0.85, 1.15, 5.8, 14),
-  new THREE.MeshStandardMaterial({ color: 0xededdf, roughness: 0.68 })
-);
-lighthouse.position.set(-18.2, 3.35, -23.9);
-placeScenery.yeongdo.add(lighthouse);
-const lighthouseTop = new THREE.Mesh(
-  new THREE.CylinderGeometry(1.05, 0.88, 1.3, 14),
-  new THREE.MeshStandardMaterial({ color: 0xd84c43, roughness: 0.55 })
-);
-lighthouseTop.position.set(-18.2, 6.85, -23.9);
-placeScenery.yeongdo.add(lighthouseTop);
-const ship = new THREE.Group();
-const shipHull = new THREE.Mesh(new THREE.BoxGeometry(9, 1.3, 2.2), new THREE.MeshStandardMaterial({ color: 0x253d50, roughness: 0.8 }));
-const shipCabin = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.7, 1.7), new THREE.MeshStandardMaterial({ color: 0xd8ddd7, roughness: 0.7 }));
-shipCabin.position.set(1.2, 1.25, 0);
-ship.add(shipHull, shipCabin);
-ship.position.set(20, 1.2, -48);
-placeScenery.yeongdo.add(ship);
+function createCoastalRidge(width, height, color, seed = 0) {
+  const shape = new THREE.Shape();
+  shape.moveTo(-width / 2, -2);
+  const steps = 18;
+  for (let i = 0; i <= steps; i++) {
+    const progress = i / steps;
+    const envelope = Math.sin(progress * Math.PI);
+    const detail = Math.sin(i * 1.73 + seed) * 0.12 + Math.sin(i * 3.11 + seed * 2) * 0.055;
+    const y = 0.25 + height * Math.max(0.08, envelope * (0.72 + detail));
+    shape.lineTo(-width / 2 + width * progress, y);
+  }
+  shape.lineTo(width / 2, -2);
+  shape.closePath();
+  const geometry = new THREE.ExtrudeGeometry(shape, { depth: 5, bevelEnabled: true, bevelSize: 0.32, bevelThickness: 0.45, bevelSegments: 2 });
+  geometry.translate(0, 0, -2.5);
+  return new THREE.Mesh(geometry, coastalMaterial(color, 1));
+}
 
-const sandMaterial = new THREE.MeshStandardMaterial({ color: 0xa58c65, roughness: 1 });
+function addRidge(group, width, height, color, position, seed) {
+  const ridge = createCoastalRidge(width, height, color, seed);
+  ridge.position.set(...position);
+  group.add(ridge);
+  return ridge;
+}
+
+function createPine(scale = 1) {
+  const pine = new THREE.Group();
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, 2.5, 8), coastalMaterial(0x372d24, 1));
+  trunk.position.y = 1.1;
+  pine.add(trunk);
+  const foliageMaterial = coastalMaterial(0x173f32, 1);
+  [[0, 2.2, 0, 1.05], [-0.58, 2, 0.08, 0.78], [0.55, 2.1, -0.1, 0.82], [0.08, 2.75, 0, 0.72]].forEach(([x, y, z, size]) => {
+    const crown = new THREE.Mesh(new THREE.IcosahedronGeometry(size, 1), foliageMaterial);
+    crown.position.set(x, y, z);
+    crown.scale.set(1.25, 0.75, 0.86);
+    pine.add(crown);
+  });
+  pine.scale.setScalar(scale);
+  return pine;
+}
+
+function addLine(group, from, to, color = 0x252b2d, opacity = 1) {
+  const material = new THREE.LineBasicMaterial({ color, transparent: opacity < 1, opacity });
+  const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([from, to]), material);
+  group.add(line);
+  return line;
+}
+
+function createCableTower(height = 9) {
+  const tower = new THREE.Group();
+  const steel = coastalMaterial(0x56646a, 0.48, 0.55);
+  [-0.8, 0.8].forEach(x => {
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.18, height, 8), steel);
+    leg.position.set(x, height / 2, 0);
+    leg.rotation.z = x * -0.035;
+    tower.add(leg);
+  });
+  const beam = new THREE.Mesh(new THREE.BoxGeometry(3.3, 0.22, 0.3), steel);
+  beam.position.y = height;
+  tower.add(beam);
+  for (let y = 2; y < height; y += 2.1) addLine(tower, new THREE.Vector3(-0.7, y, 0), new THREE.Vector3(0.7, y + 1.2, 0), 0x465157);
+  return tower;
+}
+
+function createGondola(color) {
+  const gondola = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.9, 1), coastalMaterial(color, 0.42, 0.08));
+  const glass = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.48, 1.02), new THREE.MeshStandardMaterial({ color: 0x83b8c8, roughness: 0.16, metalness: 0.35, transparent: true, opacity: 0.78 }));
+  glass.position.y = 0.17;
+  const hanger = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.65, 7), coastalMaterial(0x232a2d, 0.5, 0.6));
+  hanger.position.y = 0.76;
+  gondola.add(body, glass, hanger);
+  return gondola;
+}
+
+function createBuilding(width, height, depth, color, windowColor = 0x9ccad2) {
+  const building = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), coastalMaterial(color, 0.72, 0.06));
+  body.position.y = height / 2;
+  building.add(body);
+  const rows = Math.max(2, Math.floor(height / 1.8));
+  for (let row = 0; row < rows; row++) {
+    for (const side of [-1, 1]) {
+      const window = new THREE.Mesh(new THREE.PlaneGeometry(width * 0.18, 0.35), new THREE.MeshBasicMaterial({ color: windowColor, transparent: true, opacity: 0.7 }));
+      window.position.set(side * width * 0.25, 0.9 + row * 1.45, depth / 2 + 0.006);
+      building.add(window);
+    }
+  }
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(width * 1.04, 0.18, depth * 1.04), coastalMaterial(0x343d40, 0.8));
+  roof.position.y = height + 0.09;
+  building.add(roof);
+  return building;
+}
+
+function createLighthouse() {
+  const lighthouse = new THREE.Group();
+  const white = coastalMaterial(0xf1efe4, 0.58, 0.05);
+  const red = coastalMaterial(0xd6493f, 0.45, 0.08);
+  const tower = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 1.08, 6.4, 24), white);
+  tower.position.y = 3.2;
+  const band = new THREE.Mesh(new THREE.CylinderGeometry(0.86, 0.9, 1.05, 24), red);
+  band.position.y = 3.9;
+  const balcony = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.15, 0.16, 28), coastalMaterial(0x313a3e, 0.42, 0.5));
+  balcony.position.y = 6.4;
+  const lantern = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.68, 0.82, 20), new THREE.MeshStandardMaterial({ color: 0xffd26a, emissive: 0x7a3a09, emissiveIntensity: 0.65, transparent: true, opacity: 0.9 }));
+  lantern.position.y = 6.9;
+  const cap = new THREE.Mesh(new THREE.ConeGeometry(0.9, 0.65, 20), red);
+  cap.position.y = 7.63;
+  lighthouse.add(tower, band, balcony, lantern, cap);
+  return lighthouse;
+}
+
+function createTetrapod(scale = 1) {
+  const pod = new THREE.Group();
+  const concrete = coastalMaterial(0x687174, 0.96);
+  [[0, 0, 0], [0, 0, Math.PI / 2], [Math.PI / 2, 0, 0]].forEach(rotation => {
+    const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.38, 2.15, 8), concrete);
+    arm.rotation.set(...rotation);
+    pod.add(arm);
+  });
+  const core = new THREE.Mesh(new THREE.IcosahedronGeometry(0.46, 1), concrete);
+  pod.add(core);
+  pod.scale.setScalar(scale);
+  return pod;
+}
+
+function createFishingBoat(hullColor = 0x244b5c) {
+  const boat = new THREE.Group();
+  const hullShape = new THREE.Shape();
+  hullShape.moveTo(-4, 0.8);
+  hullShape.lineTo(3.4, 0.8);
+  hullShape.lineTo(4.4, 1.55);
+  hullShape.lineTo(-3.2, 1.5);
+  hullShape.closePath();
+  const hull = new THREE.Mesh(new THREE.ExtrudeGeometry(hullShape, { depth: 2.2, bevelEnabled: true, bevelSize: 0.14, bevelThickness: 0.12, bevelSegments: 2 }), coastalMaterial(hullColor, 0.7, 0.12));
+  hull.position.z = -1.1;
+  const cabin = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.45, 1.7), coastalMaterial(0xe7e7db, 0.6));
+  cabin.position.set(0.8, 2.2, 0);
+  const windshield = new THREE.Mesh(new THREE.PlaneGeometry(1.45, 0.55), new THREE.MeshStandardMaterial({ color: 0x74a8b5, roughness: 0.14, metalness: 0.32 }));
+  windshield.position.set(-0.41, 2.35, 0.856);
+  windshield.rotation.y = Math.PI;
+  const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.07, 3.2, 8), coastalMaterial(0x333b3d, 0.5, 0.55));
+  mast.position.set(0.8, 4.15, 0);
+  boat.add(hull, cabin, windshield, mast);
+  return boat;
+}
+
+function createCrane(color = 0xe58a2e) {
+  const crane = new THREE.Group();
+  const metal = coastalMaterial(color, 0.46, 0.5);
+  const mast = new THREE.Mesh(new THREE.BoxGeometry(0.45, 10, 0.45), metal);
+  mast.position.y = 5;
+  const boom = new THREE.Mesh(new THREE.BoxGeometry(9, 0.34, 0.34), metal);
+  boom.position.set(-2.8, 9.3, 0);
+  boom.rotation.z = -0.12;
+  const rear = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.65, 1.1), coastalMaterial(0x4b5659, 0.6, 0.35));
+  rear.position.set(1.15, 8.65, 0);
+  crane.add(mast, boom, rear);
+  addLine(crane, new THREE.Vector3(1.1, 9.5, 0), new THREE.Vector3(-7.1, 8.3, 0), 0x32393b);
+  addLine(crane, new THREE.Vector3(-7.1, 8.3, 0), new THREE.Vector3(-7.1, 2.3, 0), 0x32393b);
+  return crane;
+}
+
+function createPlaceLabel(title, subtitle) {
+  const labelCanvas = document.createElement('canvas');
+  labelCanvas.width = 640;
+  labelCanvas.height = 150;
+  const context = labelCanvas.getContext('2d');
+  context.fillStyle = 'rgba(5, 30, 42, .82)';
+  context.fillRect(4, 4, 632, 142);
+  context.strokeStyle = 'rgba(255, 215, 112, .9)';
+  context.lineWidth = 5;
+  context.strokeRect(7, 7, 626, 136);
+  context.fillStyle = '#fff6cf';
+  context.font = '800 48px sans-serif';
+  context.textAlign = 'center';
+  context.fillText(title, 320, 66);
+  context.fillStyle = '#86d4df';
+  context.font = '700 24px sans-serif';
+  context.fillText(subtitle, 320, 110);
+  const texture = new THREE.CanvasTexture(labelCanvas);
+  texture.encoding = THREE.sRGBEncoding;
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: true, fog: true }));
+  sprite.scale.set(15, 3.5, 1);
+  return sprite;
+}
+
+// AMNAM PARK / SONGDO: pine cliffs, cable cars, rocky coves and the Songdo skyline.
+const amnam = placeScenery.amnam;
+addRidge(amnam, 155, 19, 0x315d52, [0, 0, -102], 0.4);
+addRidge(amnam, 122, 14, 0x244c46, [-27, 0, -82], 1.9);
+for (let i = 0; i < 7; i++) {
+  const cliff = new THREE.Mesh(new THREE.IcosahedronGeometry(5 + (i % 3) * 1.3, 2), coastalMaterial(i % 2 ? 0x314641 : 0x263b39, 0.98));
+  cliff.position.set(-32 + i * 4.2, 3.2 + (i % 2), -38 - i * 2.5);
+  cliff.scale.set(1.45, 1.25, 0.72);
+  cliff.rotation.set(0.1 * i, 0.35 * i, 0.06 * i);
+  amnam.add(cliff);
+  if (i % 2 === 0) {
+    const pine = createPine(1.15 + i * 0.04);
+    pine.position.set(cliff.position.x, cliff.position.y + 5.4, cliff.position.z);
+    amnam.add(pine);
+  }
+}
+const towerA = createCableTower(10.5);
+towerA.position.set(-19, 6.7, -34);
+const towerB = createCableTower(12.5);
+towerB.position.set(22, 7.8, -54);
+amnam.add(towerA, towerB);
+const cableStart = new THREE.Vector3(-21, 17.4, -34);
+const cableEnd = new THREE.Vector3(24, 20.5, -54);
+addLine(amnam, cableStart, cableEnd, 0x172126);
+addLine(amnam, cableStart.clone().add(new THREE.Vector3(0, -0.32, 0.58)), cableEnd.clone().add(new THREE.Vector3(0, -0.32, 0.58)), 0x172126);
 for (let i = 0; i < 4; i++) {
-  const sandbar = new THREE.Mesh(new THREE.SphereGeometry(5 + i * 1.1, 18, 10), sandMaterial);
-  sandbar.scale.set(1.8, 0.07, 0.48);
-  sandbar.position.set(-18 + i * 12, 0.02, -26 - (i % 2) * 9);
-  placeScenery.dadaepo.add(sandbar);
+  const gondola = createGondola(i % 2 ? 0xf2aa32 : 0xc9473c);
+  gondola.position.lerpVectors(cableStart, cableEnd, 0.14 + i * 0.23);
+  gondola.position.y -= 1.05;
+  amnam.add(gondola);
 }
-const reedMaterial = new THREE.MeshStandardMaterial({ color: 0x6e6938, roughness: 1 });
-for (let i = 0; i < 34; i++) {
-  const reed = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.035, 1.1 + Math.random() * 1.2, 5), reedMaterial);
-  reed.position.set((i % 2 ? 1 : -1) * (8 + Math.random() * 8), 0.7, 4 + Math.random() * 12);
-  reed.rotation.z = (Math.random() - 0.5) * 0.15;
-  placeScenery.dadaepo.add(reed);
+for (let i = 0; i < 8; i++) {
+  const building = createBuilding(2.6 + (i % 3) * 0.55, 7 + (i % 4) * 2.5, 2.5, i % 2 ? 0xc4c0aa : 0x879ca1);
+  building.position.set(24 + i * 3.4, 0, -66 - (i % 2) * 3);
+  amnam.add(building);
 }
+const amnamLabel = createPlaceLabel('송도 · 암남공원', 'BUSAN COAST FISHING');
+amnamLabel.position.set(25, 14, -60);
+amnam.add(amnamLabel);
 
-Object.values(placeScenery).forEach(group => { group.visible = false; scene.add(group); });
+// YEONGDO: Busan Port bridge, working harbor, cranes, breakwater and red lighthouse.
+const yeongdo = placeScenery.yeongdo;
+addRidge(yeongdo, 145, 17, 0x344c55, [22, 0, -112], 2.5);
+addRidge(yeongdo, 80, 22, 0x263e48, [50, 0, -88], 4.2);
+const bridgeDeck = new THREE.Mesh(new THREE.BoxGeometry(112, 0.55, 1.25), coastalMaterial(0xaeb9bc, 0.55, 0.35));
+bridgeDeck.position.set(-2, 9.6, -82);
+yeongdo.add(bridgeDeck);
+[-26, 24].forEach(x => {
+  const pylon = new THREE.Mesh(new THREE.BoxGeometry(1.05, 23, 1.2), coastalMaterial(0xd4dcdd, 0.5, 0.25));
+  pylon.position.set(x, 12.2, -82);
+  yeongdo.add(pylon);
+  for (let offset = -20; offset <= 20; offset += 5) {
+    addLine(yeongdo, new THREE.Vector3(x, 22.5, -81.7), new THREE.Vector3(x + offset, 9.9, -81.7), 0xb9c7ca, 0.75);
+  }
+});
+const breakwater = new THREE.Mesh(new THREE.BoxGeometry(38, 1.1, 4.2), coastalMaterial(0x4e595c, 0.94));
+breakwater.position.set(-2, 0.35, -28);
+breakwater.rotation.y = -0.055;
+yeongdo.add(breakwater);
+for (let i = 0; i < 12; i++) {
+  const pod = createTetrapod(0.8 + (i % 3) * 0.12);
+  pod.position.set(-17 + i * 3.2, 0.1, -25.4 + (i % 2) * 0.6);
+  pod.rotation.set(0.15 * (i % 2), i * 0.62, 0.1);
+  yeongdo.add(pod);
+}
+const lighthouse = createLighthouse();
+lighthouse.position.set(-18.5, 0.8, -30.4);
+yeongdo.add(lighthouse);
+for (let i = 0; i < 3; i++) {
+  const crane = createCrane(i === 1 ? 0xd96832 : 0xe8a03d);
+  crane.position.set(17 + i * 10, 0, -53 - i * 2.5);
+  crane.scale.setScalar(0.72 + i * 0.06);
+  yeongdo.add(crane);
+}
+for (let i = 0; i < 10; i++) {
+  const container = new THREE.Mesh(new THREE.BoxGeometry(3.8, 1.45, 1.65), coastalMaterial([0x315e72, 0xbd523c, 0xc89234][i % 3], 0.72, 0.12));
+  container.position.set(12 + (i % 5) * 4, 0.75 + Math.floor(i / 5) * 1.5, -58);
+  yeongdo.add(container);
+}
+const portBoat = createFishingBoat(0x214d60);
+portBoat.position.set(19, -0.15, -38);
+portBoat.scale.setScalar(0.72);
+portBoat.rotation.y = -0.16;
+yeongdo.add(portBoat);
+const yeongdoLabel = createPlaceLabel('영도 · 부산항', 'BREAKWATER & HARBOR');
+yeongdoLabel.position.set(27, 15, -69);
+yeongdo.add(yeongdoLabel);
+
+// DADAEPO / MOLUNDAE: broad tidal flats, estuary bridge, reeds and sunset boats.
+const dadaepo = placeScenery.dadaepo;
+addRidge(dadaepo, 82, 14, 0x3b5144, [-48, 0, -94], 0.8);
+addRidge(dadaepo, 72, 11, 0x33483f, [53, 0, -103], 3.4);
+const sandMaterial = coastalMaterial(0xa78f65, 1);
+for (let i = 0; i < 6; i++) {
+  const sandbar = new THREE.Mesh(new THREE.SphereGeometry(5 + i * 0.75, 28, 14), sandMaterial);
+  sandbar.scale.set(1.9, 0.055, 0.5);
+  sandbar.position.set(-28 + i * 11, -0.02, -26 - (i % 3) * 8);
+  dadaepo.add(sandbar);
+}
+const estuaryBridge = new THREE.Mesh(new THREE.BoxGeometry(104, 0.42, 0.9), coastalMaterial(0x8f9997, 0.62, 0.28));
+estuaryBridge.position.set(0, 5.2, -72);
+dadaepo.add(estuaryBridge);
+for (let x = -45; x <= 45; x += 15) {
+  const pier = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.55, 5.2, 10), coastalMaterial(0x656f6d, 0.9));
+  pier.position.set(x, 2.55, -72);
+  dadaepo.add(pier);
+}
+const reedMaterial = coastalMaterial(0x686834, 1);
+for (let i = 0; i < 58; i++) {
+  const side = i % 2 ? 1 : -1;
+  const reed = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.045, 1.2 + Math.random() * 1.35, 6), reedMaterial);
+  reed.position.set(side * (8 + Math.random() * 10), 0.65, -3 - Math.random() * 14);
+  reed.rotation.z = (Math.random() - 0.5) * 0.16;
+  dadaepo.add(reed);
+  if (i % 4 === 0) {
+    const head = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.1, 0.45, 7), coastalMaterial(0x4f4127, 1));
+    head.position.copy(reed.position);
+    head.position.y += 0.95;
+    dadaepo.add(head);
+  }
+}
+for (let i = 0; i < 3; i++) {
+  const boat = createFishingBoat(i % 2 ? 0x7f4338 : 0x315969);
+  boat.position.set(-25 + i * 24, 0, -43 - i * 6);
+  boat.scale.setScalar(0.42 + i * 0.04);
+  boat.rotation.y = i % 2 ? 0.22 : -0.18;
+  dadaepo.add(boat);
+}
+for (let i = 0; i < 5; i++) {
+  const pine = createPine(1.35 + i * 0.12);
+  pine.position.set(-38 + i * 4.5, 2.5 + (i % 2), -48 - i * 2);
+  dadaepo.add(pine);
+}
+const dadaepoLabel = createPlaceLabel('다대포 · 몰운대', 'NAKDONG ESTUARY SUNSET');
+dadaepoLabel.position.set(26, 11, -61);
+dadaepo.add(dadaepoLabel);
+
+Object.values(placeScenery).forEach(group => {
+  group.visible = false;
+  scene.add(group);
+});
 
 // Detailed first-person fishing rod.
 const handRig = new THREE.Group();
@@ -1115,15 +1435,25 @@ function loop(time) {
   previousFrameTime = time;
   const seconds = time * 0.001;
   updateTimeOfDay(frameDelta);
+  clouds.children.forEach((cloud, index) => {
+    cloud.position.x += frameDelta * cloud.userData.speed;
+    if (cloud.position.x > 115) cloud.position.x = -115;
+    cloud.position.y += Math.sin(seconds * 0.15 + index) * frameDelta * 0.025;
+  });
+  seabirds.children.forEach((bird, index) => {
+    bird.position.x += frameDelta * (0.34 + index * 0.015);
+    bird.position.y += Math.sin(seconds * 0.8 + index) * frameDelta * 0.08;
+    if (bird.position.x > 50) bird.position.x = -48;
+  });
 
   const positions = waterGeometry.attributes.position;
   for (let i = 0; i < positions.count; i++) {
     const x = positions.getX(i);
     const z = positions.getY(i);
     const height =
-      Math.sin(x * 0.105 + seconds * 0.5) * 0.045 +
-      Math.sin(z * 0.15 - seconds * 0.38) * 0.026 +
-      Math.cos((x + z) * 0.072 + seconds * 0.3) * 0.016;
+      Math.sin(x * 0.105 + seconds * 0.5) * 0.085 +
+      Math.sin(z * 0.15 - seconds * 0.38) * 0.048 +
+      Math.cos((x + z) * 0.072 + seconds * 0.3) * 0.028;
     positions.setZ(i, height);
   }
   positions.needsUpdate = true;
