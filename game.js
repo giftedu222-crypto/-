@@ -440,6 +440,16 @@ function updateTimeOfDay(delta) {
   lanternGlassMaterial.emissiveIntensity = 0.12 + lanternLevel * 3.6;
   lanternGlowMaterial.opacity = lanternLevel * 0.22;
 
+  const lighthouseTarget = selectedFishingPlace.id === 'yeongdo'
+    ? THREE.MathUtils.clamp((0.18 - altitude) / 0.32, 0, 1)
+    : 0;
+  lighthouseLevel = THREE.MathUtils.lerp(lighthouseLevel, lighthouseTarget, lanternBlend);
+  lighthouseWindowMaterial.emissiveIntensity = 0.08 + lighthouseLevel * 4.8;
+  lighthouseBeaconMaterial.opacity = 0.18 + lighthouseLevel * 0.82;
+  lighthousePointLight.intensity = lighthouseLevel * 3.6;
+  lighthouseSpotLight.intensity = lighthouseLevel * 1.8;
+  lighthouseSeaBeamMaterial.opacity = lighthouseLevel * 0.22;
+
   clockTimeEl.textContent = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
   clockIconEl.textContent = altitude > 0.18 ? '☀' : altitude > -0.08 ? '◐' : '☾';
 }
@@ -821,11 +831,13 @@ function createLighthouse() {
   band.position.y = 3.9;
   const balcony = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.15, 0.16, 28), coastalMaterial(0x313a3e, 0.42, 0.5));
   balcony.position.y = 6.4;
-  const lantern = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.68, 0.82, 20), new THREE.MeshStandardMaterial({ color: 0xffd26a, emissive: 0x7a3a09, emissiveIntensity: 0.65, transparent: true, opacity: 0.9 }));
+  const lanternMaterial = new THREE.MeshStandardMaterial({ color: 0xffd26a, emissive: 0xffa22f, emissiveIntensity: 0.08, transparent: true, opacity: 0.9 });
+  const lantern = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.68, 0.82, 20), lanternMaterial);
   lantern.position.y = 6.9;
   const cap = new THREE.Mesh(new THREE.ConeGeometry(0.9, 0.65, 20), red);
   cap.position.y = 7.63;
   lighthouse.add(tower, band, balcony, lantern, cap);
+  lighthouse.userData.lanternMaterial = lanternMaterial;
   return lighthouse;
 }
 
@@ -1008,6 +1020,51 @@ for (let i = 0; i < 25; i++) {
 const lighthouse = createLighthouse();
 lighthouse.position.set(-18.5, 0.8, -30.4);
 yeongdo.add(lighthouse);
+const lighthouseWindowMaterial = lighthouse.userData.lanternMaterial;
+const lighthouseBeaconMaterial = new THREE.MeshBasicMaterial({ color: 0xffe5a3, transparent: true, opacity: 0.18, depthWrite: false, blending: THREE.AdditiveBlending });
+const lighthouseBeacon = new THREE.Mesh(new THREE.SphereGeometry(0.38, 18, 12), lighthouseBeaconMaterial);
+lighthouseBeacon.position.y = 6.95;
+lighthouse.add(lighthouseBeacon);
+const lighthousePointLight = new THREE.PointLight(0xffcf72, 0, 24, 1.7);
+lighthousePointLight.position.y = 6.95;
+lighthouse.add(lighthousePointLight);
+const lighthouseSpotLight = new THREE.SpotLight(0xffc77a, 0, 58, Math.PI / 10, 0.88, 1.55);
+lighthouseSpotLight.position.set(-18.5, 7.75, -30.4);
+const lighthouseSpotTarget = new THREE.Object3D();
+lighthouseSpotTarget.position.set(-18.5, 0.05, -10);
+lighthouseSpotLight.target = lighthouseSpotTarget;
+yeongdo.add(lighthouseSpotLight, lighthouseSpotTarget);
+
+const lighthouseBeamCanvas = document.createElement('canvas');
+lighthouseBeamCanvas.width = lighthouseBeamCanvas.height = 256;
+const lighthouseBeamContext = lighthouseBeamCanvas.getContext('2d');
+for (let y = 0; y < 256; y++) {
+  const progress = y / 255;
+  const lengthFade = Math.pow(1 - progress, 0.38);
+  const rowGradient = lighthouseBeamContext.createLinearGradient(0, 0, 256, 0);
+  rowGradient.addColorStop(0, 'rgba(255,221,145,0)');
+  rowGradient.addColorStop(0.24, `rgba(255,221,145,${lengthFade * 0.18})`);
+  rowGradient.addColorStop(0.5, `rgba(255,238,187,${lengthFade * 0.82})`);
+  rowGradient.addColorStop(0.76, `rgba(255,221,145,${lengthFade * 0.18})`);
+  rowGradient.addColorStop(1, 'rgba(255,221,145,0)');
+  lighthouseBeamContext.fillStyle = rowGradient;
+  lighthouseBeamContext.fillRect(0, y, 256, 1);
+}
+const lighthouseBeamTexture = new THREE.CanvasTexture(lighthouseBeamCanvas);
+const lighthouseSeaBeamGeometry = new THREE.BufferGeometry();
+lighthouseSeaBeamGeometry.setAttribute('position', new THREE.Float32BufferAttribute([
+  -0.45, 0, 0, 0.45, 0, 0, -11, 0, 33, 11, 0, 33
+], 3));
+lighthouseSeaBeamGeometry.setAttribute('uv', new THREE.Float32BufferAttribute([
+  0, 1, 1, 1, 0, 0, 1, 0
+], 2));
+lighthouseSeaBeamGeometry.setIndex([0, 2, 1, 2, 3, 1]);
+const lighthouseSeaBeamMaterial = new THREE.MeshBasicMaterial({ color: 0xffd98a, map: lighthouseBeamTexture, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending });
+const lighthouseSeaBeam = new THREE.Mesh(lighthouseSeaBeamGeometry, lighthouseSeaBeamMaterial);
+lighthouseSeaBeam.position.set(-18.5, 0.34, -29.2);
+lighthouseSeaBeam.rotation.y = -0.08;
+yeongdo.add(lighthouseSeaBeam);
+let lighthouseLevel = 0;
 const lighthouseCauseway = createCauseway(
   new THREE.Vector3(-15.7, 0.35, -31.4),
   new THREE.Vector3(45, 0.35, -91),
@@ -1731,6 +1788,8 @@ function loop(time) {
     bird.position.y += Math.sin(seconds * 0.8 + index) * frameDelta * 0.08;
     if (bird.position.x > 50) bird.position.x = -48;
   });
+  lighthouseSeaBeam.rotation.y = -0.08 + Math.sin(seconds * 0.34) * 0.2;
+  lighthouseSpotTarget.position.x = -18.5 + Math.sin(seconds * 0.34) * 8.5;
   cableCars.forEach((gondola, index) => {
     const rawTravel = ((gondola.userData.phase + seconds * 0.018 * gondola.userData.direction) % 2 + 2) % 2;
     const travel = rawTravel <= 1 ? rawTravel : 2 - rawTravel;
