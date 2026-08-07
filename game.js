@@ -776,30 +776,6 @@ function createCrane(color = 0xe58a2e) {
   return crane;
 }
 
-function createPlaceLabel(title, subtitle) {
-  const labelCanvas = document.createElement('canvas');
-  labelCanvas.width = 640;
-  labelCanvas.height = 150;
-  const context = labelCanvas.getContext('2d');
-  context.fillStyle = 'rgba(5, 30, 42, .82)';
-  context.fillRect(4, 4, 632, 142);
-  context.strokeStyle = 'rgba(255, 215, 112, .9)';
-  context.lineWidth = 5;
-  context.strokeRect(7, 7, 626, 136);
-  context.fillStyle = '#fff6cf';
-  context.font = '800 48px sans-serif';
-  context.textAlign = 'center';
-  context.fillText(title, 320, 66);
-  context.fillStyle = '#86d4df';
-  context.font = '700 24px sans-serif';
-  context.fillText(subtitle, 320, 110);
-  const texture = new THREE.CanvasTexture(labelCanvas);
-  texture.encoding = THREE.sRGBEncoding;
-  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: true, fog: true }));
-  sprite.scale.set(15, 3.5, 1);
-  return sprite;
-}
-
 // AMNAM PARK / SONGDO: pine cliffs, cable cars, rocky coves and the Songdo skyline.
 const amnam = placeScenery.amnam;
 addRidge(amnam, 104, 18, 0x315d52, [-42, 0, -110], 0.4);
@@ -857,10 +833,6 @@ for (let i = 0; i < 8; i++) {
   building.scale.setScalar(0.88);
   amnam.add(building);
 }
-const amnamLabel = createPlaceLabel('송도 · 암남공원', 'BUSAN COAST FISHING');
-amnamLabel.position.set(35, 9.6, -69);
-amnam.add(amnamLabel);
-
 // YEONGDO: Busan Port bridge, working harbor, cranes, breakwater and red lighthouse.
 const yeongdo = placeScenery.yeongdo;
 addRidge(yeongdo, 145, 17, 0x344c55, [22, 0, -112], 2.5);
@@ -919,10 +891,6 @@ portBoat.position.set(19, -0.15, -38);
 portBoat.scale.setScalar(0.72);
 portBoat.rotation.y = -0.16;
 yeongdo.add(portBoat);
-const yeongdoLabel = createPlaceLabel('영도 · 부산항', 'BREAKWATER & HARBOR');
-yeongdoLabel.position.set(27, 15, -69);
-yeongdo.add(yeongdoLabel);
-
 // DADAEPO / MOLUNDAE: broad tidal flats, estuary bridge, reeds and sunset boats.
 const dadaepo = placeScenery.dadaepo;
 addRidge(dadaepo, 82, 14, 0x3b5144, [-48, 0, -94], 0.8);
@@ -936,10 +904,12 @@ for (let i = 0; i < 6; i++) {
   sandbar.position.set(-28 + i * 11, -0.02, -26 - (i % 3) * 8);
   dadaepo.add(sandbar);
 }
-const estuaryBridge = new THREE.Mesh(new THREE.BoxGeometry(104, 0.42, 0.9), coastalMaterial(0x8f9997, 0.62, 0.28));
-estuaryBridge.position.set(0, 5.2, -72);
+addRidge(dadaepo, 58, 7.2, 0x3a5043, [72, 0, -79], 5.8);
+addCoastalSkirt(dadaepo, 72, 60, -75, 0x415642, 12, 3.7);
+const estuaryBridge = new THREE.Mesh(new THREE.BoxGeometry(145, 0.42, 0.9), coastalMaterial(0x8f9997, 0.62, 0.28));
+estuaryBridge.position.set(5, 5.2, -72);
 dadaepo.add(estuaryBridge);
-for (let x = -45; x <= 45; x += 15) {
+for (let x = -60; x <= 75; x += 15) {
   const pier = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.55, 5.2, 10), coastalMaterial(0x656f6d, 0.9));
   pier.position.set(x, 2.55, -72);
   dadaepo.add(pier);
@@ -968,10 +938,6 @@ for (let i = 0; i < 5; i++) {
   pine.position.set(-38 + i * 4.5, molundaeTreeHeights[i], -51 - i * 0.75);
   dadaepo.add(pine);
 }
-const dadaepoLabel = createPlaceLabel('다대포 · 몰운대', 'NAKDONG ESTUARY SUNSET');
-dadaepoLabel.position.set(26, 11, -61);
-dadaepo.add(dadaepoLabel);
-
 Object.values(placeScenery).forEach(group => {
   group.visible = false;
   scene.add(group);
