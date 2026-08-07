@@ -20,6 +20,15 @@ const seasonWidgetEl = document.querySelector('#season-widget');
 const seasonTitleEl = document.querySelector('#season-title');
 const seasonListEl = document.querySelector('#season-list');
 const seasonToggleEl = document.querySelector('#season-toggle');
+const collectionBackButton = document.querySelector('#collection-back');
+const collectionBackAnchor = document.querySelector('#collection-back-anchor');
+
+new IntersectionObserver(entries => {
+  collectionBackButton.classList.toggle('is-floating', !entries[0].isIntersecting);
+}, {
+  root: document.querySelector('#collection .collection-card'),
+  threshold: 0.2
+}).observe(collectionBackAnchor);
 
 const fishCatalog = window.SEAFOOD_CATALOG || [];
 const recipePhotos = window.RECIPE_PHOTOS || {};
