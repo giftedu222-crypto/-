@@ -308,25 +308,29 @@ function moveCatalogDetail(direction) {
   showCatalogDetail(fishCatalog.indexOf(nextFish));
 }
 
-function showCatchInformation(fish, isNew, count) {
+function showCatchInformation(fish, isNew, count, isPolluted = false) {
   const catchLabel = document.querySelector('#catch-label');
-  catchLabel.textContent = fish.isTrash ? '꽝!' : isNew ? 'NEW CATCH' : 'DUPLICATE';
+  catchLabel.textContent = fish.isTrash ? '꽝!' : isPolluted ? 'EASTER EGG' : isNew ? 'NEW CATCH' : 'DUPLICATE';
   catchLabel.classList.toggle('duplicate', fish.isTrash || !isNew);
+  catchLabel.classList.toggle('polluted', isPolluted);
   const caughtIcon = document.querySelector('#caught-icon');
   caughtIcon.classList.toggle('is-trash', fish.isTrash);
+  caughtIcon.classList.toggle('is-polluted', isPolluted);
   caughtIcon.innerHTML = fish.isTrash ? fish.icon : `<img src="${fish.photo}" alt="${fish.name}">`;
   const caughtKind = document.querySelector('#caught-kind');
-  caughtKind.textContent = fish.isTrash ? fish.group : `${fish.group} · ${rarityNames[fish.tier]}`;
-  caughtKind.style.color = fish.isTrash ? '#9eb0b7' : rarityColors[fish.tier];
-  document.querySelector('#caught-name').textContent = fish.name;
-  document.querySelector('#caught-description').textContent = fish.trait;
-  document.querySelector('#caught-recipe').textContent = fish.isTrash ? '추천 요리 없음' : fish.recipe;
+  caughtKind.textContent = fish.isTrash ? fish.group : `${fish.group} · ${rarityNames[fish.tier]}${isPolluted ? ' · 환경오염' : ''}`;
+  caughtKind.style.color = fish.isTrash ? '#9eb0b7' : isPolluted ? '#c5d85a' : rarityColors[fish.tier];
+  document.querySelector('#caught-name').textContent = isPolluted ? `환경오염 ${fish.name}` : fish.name;
+  document.querySelector('#caught-description').textContent = isPolluted
+    ? `바다 쓰레기에 오염된 ${fish.name}입니다. 깨끗한 바다와 해양 생물을 위해 쓰레기를 줄이고 환경을 보호해 주세요.`
+    : fish.trait;
+  document.querySelector('#caught-recipe').textContent = fish.isTrash ? '추천 요리 없음' : isPolluted ? '섭취 주의 · 바다로 버리지 않기' : fish.recipe;
   document.querySelector('#caught-season').textContent = fish.isTrash ? '해당 없음' : fish.season;
-  document.querySelector('#caught-state').textContent = fish.isTrash ? '도감에 등록되지 않음' : isNew ? '새로 발견!' : `중복 획득 · 총 ${count}회`;
+  document.querySelector('#caught-state').textContent = fish.isTrash ? '도감에 등록되지 않음' : isPolluted ? `환경오염 개체 · 원래 종 ${count}회` : isNew ? '새로 발견!' : `중복 획득 · 총 ${count}회`;
   const caughtDexButton = document.querySelector('#caught-open-dex');
   caughtDexButton.hidden = Boolean(fish.isTrash);
   if (!fish.isTrash) caughtDexButton.dataset.index = String(fishCatalog.indexOf(fish));
-  catchInfo.style.setProperty('--catch-color', fish.isTrash ? '#69747a' : rarityColors[fish.tier]);
+  catchInfo.style.setProperty('--catch-color', fish.isTrash ? '#69747a' : isPolluted ? '#8da13f' : rarityColors[fish.tier]);
   catchInfo.style.display = 'flex';
 }
 
@@ -1571,10 +1575,10 @@ function getCatchModelKey(fish) {
   return 'tunicate';
 }
 
-function setHookedCatchModel(fish) {
+function setHookedCatchModel(fish, isPolluted = false) {
   Object.values(hookedCatchModels).forEach(model => { model.visible = false; });
   hookedCatchModels[getCatchModelKey(fish)].visible = true;
-  hookedFishMaterial.color.set(fish.isTrash ? 0x657078 : rarityColors[fish.tier]);
+  hookedFishMaterial.color.set(fish.isTrash ? 0x657078 : isPolluted ? 0x78853f : rarityColors[fish.tier]);
   hookedCatchAccentMaterial.color.copy(hookedFishMaterial.color).offsetHSL(0.03, -0.12, 0.2);
 }
 
@@ -1746,6 +1750,7 @@ function reelIn() {
   if (!cast) return;
   if (bite) {
     const fish = pickCatch();
+    const isPolluted = !fish.isTrash && fish.form === 'fish' && Math.random() < 0.02;
     const isNew = !fish.isTrash && !discoveredFish.has(fish.id);
     let count = 0;
     if (!fish.isTrash) {
@@ -1763,8 +1768,8 @@ function reelIn() {
     ripple.visible = false;
     catchAnimating = true;
     catchAnimationStart = performance.now();
-    pendingCatch = { fish, isNew, count };
-    setHookedCatchModel(fish);
+    pendingCatch = { fish, isNew, count, isPolluted };
+    setHookedCatchModel(fish, isPolluted);
     hookedFish.visible = true;
     splashAt(bobPosition, 1.6);
     catchStartPosition.copy(bobPosition);
@@ -2071,8 +2076,10 @@ function loop(time) {
       bobber.visible = false;
       hookedFish.visible = false;
       line.visible = false;
-      statusEl.textContent = result.fish.isTrash ? `꽝! ${result.fish.name}을(를) 건졌습니다.` : `${result.fish.name}을(를) 낚았습니다!`;
-      showCatchInformation(result.fish, result.isNew, result.count);
+      statusEl.textContent = result.fish.isTrash
+        ? `꽝! ${result.fish.name}을(를) 건졌습니다.`
+        : result.isPolluted ? `이스터에그! 환경오염 ${result.fish.name}을(를) 낚았습니다.` : `${result.fish.name}을(를) 낚았습니다!`;
+      showCatchInformation(result.fish, result.isNew, result.count, result.isPolluted);
     }
   }
 
