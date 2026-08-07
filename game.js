@@ -164,7 +164,7 @@ function showCatalogDetail(index) {
   document.querySelector('#detail-recipe-list').innerHTML = recipeNames.map(recipeName => {
     const visual = recipePhotos[`${fish.name}|${recipeName}`];
     const lockedClass = found ? '' : 'is-locked';
-    return `<article class="detail-recipe-item"><img class="${lockedClass}" src="${visual.image}?v=2" alt="${fish.name} ${recipeName} 실제 완성 요리 사진"><div class="detail-recipe-copy"><strong>${fish.name} ${recipeName}</strong><a href="${visual.source}" target="_blank" rel="noreferrer">실제 요리 사진 출처</a></div></article>`;
+    return `<article class="detail-recipe-item"><img class="${lockedClass}" src="${visual.image}?v=3" alt="${fish.name} ${recipeName} 실제 완성 요리 사진"><div class="detail-recipe-copy"><strong>${fish.name} ${recipeName}</strong><a href="${visual.source}" target="_blank" rel="noreferrer">실제 요리 사진 출처</a></div></article>`;
   }).join('');
   const credit = document.querySelector('#detail-credit');
   credit.href = fish.source;
