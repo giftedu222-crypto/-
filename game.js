@@ -423,7 +423,9 @@ function updateTimeOfDay(delta) {
   renderer.setClearColor(skyColor);
   scene.fog.color.copy(fogColor);
 
-  sun.position.set(Math.cos(solarAngle) * 105, altitude * 72, -145);
+  const sunHorizontalRadius = selectedFishingPlace.id === 'dadaepo' ? 38 : 105;
+  const sunHeight = selectedFishingPlace.id === 'dadaepo' ? Math.max(altitude * 72, 15) : altitude * 72;
+  sun.position.set(Math.cos(solarAngle) * sunHorizontalRadius, sunHeight, -145);
   sun.visible = altitude > -0.08;
   moon.position.set(-Math.cos(solarAngle) * 100, -altitude * 62, -150);
   moon.visible = altitude < 0.12;
@@ -438,6 +440,7 @@ function updateTimeOfDay(delta) {
   lanternLevel = THREE.MathUtils.lerp(lanternLevel, lanternTarget, lanternBlend);
   lanternLight.intensity = lanternLevel * 2.4;
   lanternGlassMaterial.emissiveIntensity = 0.12 + lanternLevel * 3.6;
+  lanternCoreMaterial.opacity = 0.05 + lanternLevel * 0.95;
   lanternGlowMaterial.opacity = lanternLevel * 0.22;
 
   const lighthouseTarget = selectedFishingPlace.id === 'yeongdo'
@@ -449,6 +452,8 @@ function updateTimeOfDay(delta) {
   lighthousePointLight.intensity = lighthouseLevel * 3.6;
   lighthouseSpotLight.intensity = lighthouseLevel * 1.8;
   lighthouseSeaBeamMaterial.opacity = lighthouseLevel * 0.22;
+  bridgeLightMaterial.emissiveIntensity = 0.08 + lighthouseLevel * 5;
+  bridgeLampLights.forEach(light => { light.intensity = lighthouseLevel; });
 
   clockTimeEl.textContent = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
   clockIconEl.textContent = altitude > 0.18 ? '☀' : altitude > -0.08 ? '◐' : '☾';
@@ -564,6 +569,9 @@ lanternLower.position.y = 0.31;
 const lanternGlassMaterial = new THREE.MeshStandardMaterial({ color: 0xffd596, emissive: 0xff8f35, emissiveIntensity: 0.12, roughness: 0.14, metalness: 0.02, transparent: true, opacity: 0.7 });
 const lanternGlass = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.31, 0.72, 18), lanternGlassMaterial);
 lanternGlass.position.y = 0.72;
+const lanternCoreMaterial = new THREE.MeshBasicMaterial({ color: 0xffb347, transparent: true, opacity: 0.05, depthWrite: false, blending: THREE.AdditiveBlending });
+const lanternCore = new THREE.Mesh(new THREE.SphereGeometry(0.14, 16, 12), lanternCoreMaterial);
+lanternCore.position.y = 0.72;
 const lanternCap = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.39, 0.18, 18), lanternMetalMaterial);
 lanternCap.position.y = 1.17;
 const lanternRoof = new THREE.Mesh(new THREE.ConeGeometry(0.4, 0.26, 18), lanternMetalMaterial);
@@ -571,7 +579,7 @@ lanternRoof.position.y = 1.38;
 const lanternHandle = new THREE.Mesh(new THREE.TorusGeometry(0.48, 0.035, 8, 24, Math.PI), lanternMetalMaterial);
 lanternHandle.rotation.z = Math.PI;
 lanternHandle.position.y = 1.48;
-lantern.add(lanternBase, lanternLower, lanternGlass, lanternCap, lanternRoof, lanternHandle);
+lantern.add(lanternBase, lanternLower, lanternGlass, lanternCore, lanternCap, lanternRoof, lanternHandle);
 lantern.traverse(object => { if (object.isMesh) object.castShadow = true; });
 scene.add(lantern);
 
@@ -986,6 +994,21 @@ addCoastalSkirt(yeongdo, 18, 138, -84, 0x30464d, 22, 1.5);
 const bridgeDeck = new THREE.Mesh(new THREE.BoxGeometry(190, 0.55, 1.25), coastalMaterial(0xaeb9bc, 0.55, 0.35));
 bridgeDeck.position.set(0, 9.6, -82);
 yeongdo.add(bridgeDeck);
+const bridgeLightMaterial = new THREE.MeshStandardMaterial({ color: 0xffd991, emissive: 0xffa62d, emissiveIntensity: 0.08, roughness: 0.28, metalness: 0.08 });
+const bridgeLampLights = [];
+for (let x = -75, index = 0; x <= 75; x += 15, index++) {
+  const lampPost = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.07, 0.72, 8), coastalMaterial(0x4b5558, 0.48, 0.5));
+  lampPost.position.set(x, 10.22, -81.65);
+  const lampBulb = new THREE.Mesh(new THREE.SphereGeometry(0.34, 12, 9), bridgeLightMaterial);
+  lampBulb.position.set(x, 10.62, -81.65);
+  yeongdo.add(lampPost, lampBulb);
+  if (index % 3 === 0) {
+    const lampLight = new THREE.PointLight(0xffc873, 0, 15, 2);
+    lampLight.position.set(x, 10.5, -81.2);
+    bridgeLampLights.push(lampLight);
+    yeongdo.add(lampLight);
+  }
+}
 [-76, -58, 57, 75].forEach(x => {
   const approachPier = new THREE.Mesh(new THREE.BoxGeometry(1.1, 9.4, 1.1), coastalMaterial(0x879496, 0.78, 0.18));
   approachPier.position.set(x, 4.7, -82);
