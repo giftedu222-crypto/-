@@ -438,9 +438,11 @@ function updateTimeOfDay(delta) {
   const lanternTarget = THREE.MathUtils.clamp((0.22 - altitude) / 0.35, 0, 1);
   const lanternBlend = delta > 0 ? 1 - Math.exp(-delta * 2.2) : 1;
   lanternLevel = THREE.MathUtils.lerp(lanternLevel, lanternTarget, lanternBlend);
-  lanternLight.intensity = lanternLevel * 2.4;
-  lanternGlassMaterial.emissiveIntensity = 0.12 + lanternLevel * 3.6;
-  lanternCoreMaterial.opacity = 0.05 + lanternLevel * 0.95;
+  lanternLight.intensity = lanternLevel * 2.25;
+  lanternGlassMaterial.emissiveIntensity = 0.06 + lanternLevel * 0.7;
+  lanternCoreMaterial.opacity = 0.04 + lanternLevel * 0.96;
+  lanternFlameMaterial.opacity = 0.04 + lanternLevel * 0.96;
+  lanternHaloMaterial.opacity = lanternLevel * 0.32;
   lanternGlowMaterial.opacity = lanternLevel * 0.22;
 
   const lighthouseTarget = selectedFishingPlace.id === 'yeongdo'
@@ -566,12 +568,18 @@ const lanternBase = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.5, 0.24, 1
 lanternBase.position.y = 0.12;
 const lanternLower = new THREE.Mesh(new THREE.CylinderGeometry(0.29, 0.36, 0.14, 18), lanternMetalMaterial);
 lanternLower.position.y = 0.31;
-const lanternGlassMaterial = new THREE.MeshStandardMaterial({ color: 0xffd596, emissive: 0xff8f35, emissiveIntensity: 0.12, roughness: 0.14, metalness: 0.02, transparent: true, opacity: 0.7 });
+const lanternGlassMaterial = new THREE.MeshStandardMaterial({ color: 0xffd596, emissive: 0xff8f35, emissiveIntensity: 0.06, roughness: 0.14, metalness: 0.02, transparent: true, opacity: 0.42 });
 const lanternGlass = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.31, 0.72, 18), lanternGlassMaterial);
 lanternGlass.position.y = 0.72;
-const lanternCoreMaterial = new THREE.MeshBasicMaterial({ color: 0xffb347, transparent: true, opacity: 0.05, depthWrite: false, blending: THREE.AdditiveBlending });
-const lanternCore = new THREE.Mesh(new THREE.SphereGeometry(0.14, 16, 12), lanternCoreMaterial);
-lanternCore.position.y = 0.72;
+const lanternCoreMaterial = new THREE.MeshBasicMaterial({ color: 0xfff0a8, transparent: true, opacity: 0.04, depthWrite: false, blending: THREE.AdditiveBlending });
+const lanternCore = new THREE.Mesh(new THREE.SphereGeometry(0.085, 16, 12), lanternCoreMaterial);
+lanternCore.position.y = 0.62;
+const lanternFlameMaterial = new THREE.MeshBasicMaterial({ color: 0xff7d20, transparent: true, opacity: 0.04, depthWrite: false, blending: THREE.AdditiveBlending });
+const lanternFlame = new THREE.Mesh(new THREE.ConeGeometry(0.115, 0.34, 14), lanternFlameMaterial);
+lanternFlame.position.y = 0.76;
+const lanternHaloMaterial = new THREE.MeshBasicMaterial({ color: 0xffb347, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+const lanternHalo = new THREE.Mesh(new THREE.SphereGeometry(0.235, 18, 12), lanternHaloMaterial);
+lanternHalo.position.y = 0.71;
 const lanternCap = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.39, 0.18, 18), lanternMetalMaterial);
 lanternCap.position.y = 1.17;
 const lanternRoof = new THREE.Mesh(new THREE.ConeGeometry(0.4, 0.26, 18), lanternMetalMaterial);
@@ -579,7 +587,7 @@ lanternRoof.position.y = 1.38;
 const lanternHandle = new THREE.Mesh(new THREE.TorusGeometry(0.48, 0.035, 8, 24, Math.PI), lanternMetalMaterial);
 lanternHandle.rotation.z = Math.PI;
 lanternHandle.position.y = 1.48;
-lantern.add(lanternBase, lanternLower, lanternGlass, lanternCore, lanternCap, lanternRoof, lanternHandle);
+lantern.add(lanternBase, lanternLower, lanternGlass, lanternHalo, lanternFlame, lanternCore, lanternCap, lanternRoof, lanternHandle);
 lantern.traverse(object => { if (object.isMesh) object.castShadow = true; });
 scene.add(lantern);
 
@@ -1801,6 +1809,9 @@ function loop(time) {
   previousFrameTime = time;
   const seconds = time * 0.001;
   updateTimeOfDay(frameDelta);
+  const lanternFlicker = 0.95 + Math.sin(seconds * 7.1) * 0.035 + Math.sin(seconds * 13.7) * 0.015;
+  lanternFlame.scale.set(1, lanternFlicker, 1);
+  lanternLight.intensity *= lanternFlicker;
   clouds.children.forEach((cloud, index) => {
     cloud.position.x += frameDelta * cloud.userData.speed;
     if (cloud.position.x > 115) cloud.position.x = -115;
