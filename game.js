@@ -40,18 +40,26 @@ const fishingPlaces = {
   yeongdo: { id: 'yeongdo', name: '영도 신방파제', sky: 0x789fb8, fog: 0x779aab, water: [0x0a3559, 0x072944, 0x041a31], sun: 0xffe0a8, light: 0xd9e7ed, catchRates: [{ name: '전갱이', rate: 17 }, { name: '갈치', rate: 14 }, { name: '붕장어', rate: 12 }, { name: '학꽁치', rate: 9 }, { name: '고등어', rate: 8 }, { name: '감성돔', rate: 6 }], otherRate: 24, trashRate: 10 },
   dadaepo: { id: 'dadaepo', name: '다대포 · 몰운대', sky: 0xd99070, fog: 0xb98270, water: [0x104a72, 0x0b365b, 0x072341], sun: 0xffb657, light: 0xffc88b, catchRates: [{ name: '도다리', rate: 16 }, { name: '감성돔', rate: 15 }, { name: '숭어', rate: 11 }, { name: '농어', rate: 9 }, { name: '참돔', rate: 7 }, { name: '벵에돔', rate: 5 }], otherRate: 27, trashRate: 10 }
 };
-const recipeVisuals = {
-  '소금구이 · 무조림 · 튀김': { label: '생선 소금구이', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fd/Korean_grilled_tile_fish-Okdom_gui-01.jpg/640px-Korean_grilled_tile_fish-Okdom_gui-01.jpg', source: 'https://commons.wikimedia.org/wiki/File:Korean_grilled_tile_fish-Okdom_gui-01.jpg' },
-  '볶음 · 구이 · 조림': { label: '생선 조림', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Korean_braised_cutlass_fish-Galchi_jorim-02.jpg/640px-Korean_braised_cutlass_fish-Galchi_jorim-02.jpg', source: 'https://commons.wikimedia.org/wiki/File:Korean_braised_cutlass_fish-Galchi_jorim-02.jpg' },
-  '회 · 소금구이 · 맑은탕': { label: '생선회', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/db/Korean_cuisine-Mineo_Sashimi_Mokpo_South_Korea_%281%29.jpg/640px-Korean_cuisine-Mineo_Sashimi_Mokpo_South_Korea_%281%29.jpg', source: 'https://commons.wikimedia.org/wiki/File:Korean_cuisine-Mineo_Sashimi_Mokpo_South_Korea_(1).jpg' },
-  '맑은탕 · 찜 · 전': { label: '해물파전', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/97/Pajeon.jpg/640px-Pajeon.jpg', source: 'https://commons.wikimedia.org/wiki/File:Pajeon.jpg' },
-  '숯불구이 · 덮밥 · 맑은탕': { label: '장어덮밥', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/Tokyo_Chikuyotei_Unadon01s2100.jpg/640px-Tokyo_Chikuyotei_Unadon01s2100.jpg', source: 'https://commons.wikimedia.org/wiki/File:Tokyo_Chikuyotei_Unadon01s2100.jpg' },
-  '숙회 · 볶음 · 구이': { label: '문어 숙회', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/Polbo_%C3%A1_feira_Madrid_2010_0710.jpg/640px-Polbo_%C3%A1_feira_Madrid_2010_0710.jpg', source: 'https://commons.wikimedia.org/wiki/File:Polbo_%C3%A1_feira_Madrid_2010_0710.jpg' },
-  '찜 · 숯불구이 · 맑은탕': { label: '조개찜', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/Steamed_baby_clams.jpg/640px-Steamed_baby_clams.jpg', source: 'https://commons.wikimedia.org/wiki/File:Steamed_baby_clams.jpg' },
-  '찜 · 소금구이 · 해물탕': { label: '해물탕', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Korean.food-Haemultang-01.jpg/640px-Korean.food-Haemultang-01.jpg', source: 'https://commons.wikimedia.org/wiki/File:Korean.food-Haemultang-01.jpg' },
-  '성게알밥 · 비빔밥 · 초밥': { label: '성게알밥', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/%EC%84%B1%EA%B2%8C%EB%8D%AE%EB%B0%A5_-_Sungge-deopbap_-_Sea_Urchin_roe_rice_bowl.jpg/640px-%EC%84%B1%EA%B2%8C%EB%8D%AE%EB%B0%A5_-_Sungge-deopbap_-_Sea_Urchin_roe_rice_bowl.jpg', source: 'https://commons.wikimedia.org/wiki/File:%EC%84%B1%EA%B2%8C%EB%8D%AE%EB%B0%A5_-_Sungge-deopbap_-_Sea_Urchin_roe_rice_bowl.jpg' },
-  '회 · 볶음 · 해삼탕': { label: '해삼 요리', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Sea_cucumber_dish_2.jpg/640px-Sea_cucumber_dish_2.jpg', source: 'https://commons.wikimedia.org/wiki/File:Sea_cucumber_dish_2.jpg' },
-  '회 · 비빔밥 · 된장찌개': { label: '회 비빔밥', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/28/Gusundol-sashimi_rice.jpg/640px-Gusundol-sashimi_rice.jpg', source: 'https://commons.wikimedia.org/wiki/File:Gusundol-sashimi_rice.jpg' }
+const dishVisuals = {
+  '소금구이': { image: 'assets/recipes/salt-grill.jpg', source: 'https://www.flickr.com/photos/12687042@N00/3091626148' },
+  '무조림': { image: 'assets/recipes/radish-stew.jpg', source: 'https://www.flickr.com/photos/97403714@N02/32517860785' },
+  '튀김': { image: 'assets/recipes/fried-fish.jpg', source: 'https://www.flickr.com/photos/28531775@N06/4288296928' },
+  '볶음': { image: 'assets/recipes/stir-fry.jpg', source: 'https://www.flickr.com/photos/82304216@N00/5392563778' },
+  '구이': { image: 'assets/recipes/grill.jpg', source: 'https://www.flickr.com/photos/79827287@N00/259708395' },
+  '조림': { image: 'assets/recipes/braise.jpg', source: 'https://www.flickr.com/photos/93462146@N00/5605007665' },
+  '회': { image: 'assets/recipes/sashimi.jpg', source: 'https://www.flickr.com/photos/66172503@N00/8727437089' },
+  '맑은탕': { image: 'assets/recipes/clear-soup.jpg', source: 'https://www.flickr.com/photos/60162443@N00/4803652921' },
+  '찜': { image: 'assets/recipes/steam.jpg', source: 'https://www.flickr.com/photos/35034346243@N01/190535218' },
+  '전': { image: 'assets/recipes/pancake.jpg', source: 'https://www.flickr.com/photos/21065622@N08/5534738474' },
+  '숯불구이': { image: 'assets/recipes/charcoal-grill.jpg', source: 'https://www.flickr.com/photos/94862897@N00/5045430050' },
+  '덮밥': { image: 'assets/recipes/rice-bowl.jpg', source: 'https://www.flickr.com/photos/36749444@N06/52440126619' },
+  '숙회': { image: 'assets/recipes/boiled.jpg', source: 'https://www.flickr.com/photos/30265340@N00/505597425' },
+  '해물탕': { image: 'assets/recipes/seafood-stew.jpg', source: 'https://www.flickr.com/photos/67474281@N00/5794743384' },
+  '성게알밥': { image: 'assets/recipes/urchin-rice.jpg', source: 'https://www.flickr.com/photos/44934278@N04/36087370125' },
+  '비빔밥': { image: 'assets/recipes/bibimbap.jpg', source: 'https://www.flickr.com/photos/103743993@N04/12330376074' },
+  '초밥': { image: 'assets/recipes/sushi.jpg', source: 'https://www.flickr.com/photos/60162443@N00/4331316207' },
+  '해삼탕': { image: 'assets/recipes/sea-cucumber-soup.jpg', source: 'https://www.flickr.com/photos/74105777@N00/9371229003' },
+  '된장찌개': { image: 'assets/recipes/doenjang-stew.jpg', source: 'https://www.flickr.com/photos/10559879@N00/3327400231' }
 };
 let selectedFishingPlace = null;
 const initialClock = new Date();
@@ -172,15 +180,11 @@ function showCatalogDetail(index) {
   document.querySelector('#detail-meta').textContent = `${fish.group} · ${found ? '등록 완료' : '미등록 · 회색 미리보기'}`;
   document.querySelector('#detail-trait').textContent = fish.trait;
   document.querySelector('#detail-season').textContent = `대표 제철 ${fish.season} · 지역별 차이 있음`;
-  document.querySelector('#detail-recipe').textContent = fish.recipe;
-  const recipeVisual = recipeVisuals[fish.recipe] || recipeVisuals['소금구이 · 무조림 · 튀김'];
-  const recipePhoto = document.querySelector('#detail-recipe-photo');
-  recipePhoto.src = recipeVisual.image;
-  recipePhoto.alt = `${fish.name} 추천 요리 예시 · ${recipeVisual.label} 실제 사진`;
-  recipePhoto.classList.toggle('is-locked', !found);
-  const recipeCredit = document.querySelector('#detail-recipe-credit');
-  recipeCredit.href = recipeVisual.source;
-  recipeCredit.textContent = `${recipeVisual.label} 실제 사진 · Wikimedia Commons`;
+  const recipeNames = fish.recipe.split(' · ');
+  document.querySelector('#detail-recipe-list').innerHTML = recipeNames.map(recipeName => {
+    const visual = dishVisuals[recipeName] || dishVisuals['구이'];
+    return `<article class="detail-recipe-item"><img class="${found ? '' : 'is-locked'}" src="${visual.image}" alt="${fish.name} 추천 요리 ${recipeName} 실제 사진"><div><strong>${recipeName}</strong><a href="${visual.source}" target="_blank" rel="noreferrer">실제 사진 출처</a></div></article>`;
+  }).join('');
   const credit = document.querySelector('#detail-credit');
   credit.href = fish.source;
   credit.textContent = `사진 출처 · ${fish.license}`;
