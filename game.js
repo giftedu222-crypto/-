@@ -708,6 +708,34 @@ function addRidge(group, width, height, color, position, seed) {
   return ridge;
 }
 
+function ridgeSurfaceHeight(width, height, centerX, x, seed) {
+  const steps = 18;
+  const progress = THREE.MathUtils.clamp((x - (centerX - width / 2)) / width, 0, 1);
+  const stepPosition = progress * steps;
+  const sampleHeight = step => {
+    const sampleProgress = step / steps;
+    const envelope = Math.sin(sampleProgress * Math.PI);
+    const detail = Math.sin(step * 1.73 + seed) * 0.12 + Math.sin(step * 3.11 + seed * 2) * 0.055;
+    return 0.25 + height * Math.max(0.08, envelope * (0.72 + detail));
+  };
+  const leftStep = Math.floor(stepPosition);
+  const rightStep = Math.min(steps, leftStep + 1);
+  return THREE.MathUtils.lerp(sampleHeight(leftStep), sampleHeight(rightStep), stepPosition - leftStep);
+}
+
+function addPinesAlongRidge(group, ridge, placements) {
+  placements.forEach(([x, scale, depthOffset = 0], index) => {
+    const pine = createPine(scale);
+    pine.position.set(
+      x,
+      ridge.position[1] + ridgeSurfaceHeight(ridge.width, ridge.height, ridge.position[0], x, ridge.seed) - 0.08,
+      ridge.position[2] + 0.9 + depthOffset
+    );
+    pine.rotation.y = index * 0.91 + ridge.seed;
+    group.add(pine);
+  });
+}
+
 function createPine(scale = 1) {
   const pine = new THREE.Group();
   const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, 2.5, 8), coastalMaterial(0x372d24, 1));
@@ -952,29 +980,42 @@ const amnam = placeScenery.amnam;
 addRidge(amnam, 165, 18, 0x315d52, [-62, 0, -110], 0.4);
 addRidge(amnam, 78, 12, 0x294d47, [50, 0, -118], 1.9);
 for (let i = 0; i < 5; i++) {
-  const cliff = new THREE.Mesh(new THREE.IcosahedronGeometry(5.6 + (i % 3) * 1.15, 2), coastalMaterial(i % 2 ? 0x314641 : 0x263b39, 0.98));
+  const cliffRadius = 5.6 + (i % 3) * 1.15;
+  const cliff = new THREE.Mesh(new THREE.IcosahedronGeometry(cliffRadius, 2), coastalMaterial(i % 2 ? 0x314641 : 0x263b39, 0.98));
   cliff.position.set(-58 + i * 5.2, 3.4 + (i % 2) * 0.7, -39 - i * 1.8);
   cliff.scale.set(1.55, 1.3, 0.78);
   cliff.rotation.set(0.08 * i, 0.41 * i, 0.05 * i);
   amnam.add(cliff);
   if (i % 2 === 0) {
-    const pine = createPine(0.82 + i * 0.035);
-    pine.position.set(cliff.position.x, cliff.position.y + 5.2, cliff.position.z + 0.2);
+    const pineScale = 0.88 + i * 0.035;
+    const pine = createPine(pineScale);
+    pine.position.set(cliff.position.x + (i === 2 ? 0.7 : -0.45), cliff.position.y + cliffRadius * cliff.scale.y * 0.82, cliff.position.z - 0.2);
+    pine.rotation.y = i * 1.13;
     amnam.add(pine);
   }
 }
 for (let i = 0; i < 7; i++) {
-  const cliff = new THREE.Mesh(new THREE.IcosahedronGeometry(5 + (i % 3) * 1.3, 2), coastalMaterial(i % 2 ? 0x314641 : 0x263b39, 0.98));
+  const cliffRadius = 5 + (i % 3) * 1.3;
+  const cliff = new THREE.Mesh(new THREE.IcosahedronGeometry(cliffRadius, 2), coastalMaterial(i % 2 ? 0x314641 : 0x263b39, 0.98));
   cliff.position.set(-32 + i * 4.2, 3.2 + (i % 2), -38 - i * 2.5);
   cliff.scale.set(1.45, 1.25, 0.72);
   cliff.rotation.set(0.1 * i, 0.35 * i, 0.06 * i);
   amnam.add(cliff);
   if (i % 2 === 0) {
-    const pine = createPine(1.15 + i * 0.04);
-    pine.position.set(cliff.position.x, cliff.position.y + 5.4, cliff.position.z);
+    const pineScale = 1.02 - i * 0.035;
+    const pine = createPine(pineScale);
+    pine.position.set(cliff.position.x + (i % 4 ? 0.55 : -0.55), cliff.position.y + cliffRadius * cliff.scale.y * 0.82, cliff.position.z - 0.25);
+    pine.rotation.y = 0.55 + i * 0.92;
     amnam.add(pine);
   }
 }
+addPinesAlongRidge(amnam, { width: 165, height: 18, position: [-62, 0, -110], seed: 0.4 }, [
+  [-116, 0.82, 0.3], [-99, 0.96, -0.2], [-82, 0.88, 0.35], [-64, 1.08, -0.25],
+  [-46, 0.98, 0.2], [-28, 0.9, -0.35], [-10, 0.8, 0.15]
+]);
+addPinesAlongRidge(amnam, { width: 78, height: 12, position: [50, 0, -118], seed: 1.9 }, [
+  [23, 0.72, 0.2], [37, 0.82, -0.2], [52, 0.9, 0.25], [67, 0.8, -0.3], [80, 0.7, 0.15]
+]);
 addCoastalSkirt(amnam, -48, 118, -38, 0x2a403b, 15, 0.7);
 const towerA = createCableTower(8.4);
 towerA.position.set(-19, 8.7, -49);
@@ -1181,22 +1222,18 @@ for (let i = 0; i < 3; i++) {
 }
 addRidge(dadaepo, 58, 6.2, 0x3d5546, [-29, 0, -53], 4.8);
 addCoastalSkirt(dadaepo, -29, 62, -49, 0x475a42, 14, 4.2);
-const molundaePines = [
-  [-77, 3.7, -85.5, 0.58], [-69, 5.8, -85.8, 0.64], [-60, 8.1, -86.2, 0.6],
-  [-51, 9.8, -86.5, 0.7], [-42, 9.4, -86.1, 0.62], [-32, 7.6, -85.7, 0.66],
-  [-22, 5.1, -85.4, 0.57], [-13, 2.7, -85.2, 0.54],
-  [25, 3.4, -99.5, 0.55], [33, 5.4, -99.8, 0.63], [42, 7.1, -100.1, 0.58],
-  [51, 8.2, -100.4, 0.68], [60, 7.6, -100.1, 0.61], [70, 5.7, -99.7, 0.64],
-  [80, 3.1, -99.4, 0.53],
-  [-43, 3.9, -50.2, 0.72], [-35, 5.1, -50.6, 0.78], [-27, 5.4, -51.1, 0.7],
-  [-19, 4.2, -51.5, 0.65], [-11, 2.8, -51.8, 0.58]
-];
-molundaePines.forEach(([x, y, z, scale], index) => {
-  const pine = createPine(scale);
-  pine.position.set(x, y, z);
-  pine.rotation.y = index * 0.83;
-  dadaepo.add(pine);
-});
+addPinesAlongRidge(dadaepo, { width: 82, height: 14, position: [-48, 0, -94], seed: 0.8 }, [
+  [-82, 0.72, 0.35], [-73, 0.82, -0.25], [-63, 0.9, 0.2], [-52, 1.02, -0.3],
+  [-41, 0.94, 0.25], [-30, 0.86, -0.2], [-19, 0.76, 0.3]
+]);
+addPinesAlongRidge(dadaepo, { width: 72, height: 11, position: [53, 0, -103], seed: 3.4 }, [
+  [23, 0.7, 0.25], [33, 0.8, -0.25], [44, 0.9, 0.2], [55, 0.96, -0.3],
+  [66, 0.88, 0.25], [77, 0.78, -0.2]
+]);
+addPinesAlongRidge(dadaepo, { width: 58, height: 6.2, position: [-29, 0, -53], seed: 4.8 }, [
+  [-50, 0.9, 0.2], [-42, 1.02, -0.25], [-33, 1.14, 0.2], [-24, 1.08, -0.3],
+  [-15, 0.98, 0.25], [-7, 0.86, -0.2]
+]);
 Object.values(placeScenery).forEach(group => {
   group.visible = false;
   scene.add(group);
